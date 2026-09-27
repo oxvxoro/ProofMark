@@ -1,0 +1,44 @@
+version: 1
+workspace:
+  solution: 
+  runDir: .distill/runs
+testing:
+  platform: auto
+redaction:
+  patterns: []
+reliability:
+  minConfidence: 0.5
+profiles:
+  quick:
+    checks:
+    - build
+    - unit
+  full:
+    checks:
+    - build
+    - unit
+    - format
+checks:
+  build:
+    kind: build
+    command: dotnet build tests/Distill.Tests/Distill.Tests.csproj
+    source: msbuild-binlog
+    timeout: 300
+    stopOnFailure: true
+    dependsOn: []
+  unit:
+    kind: test
+    command: dotnet test tests/Distill.Tests/Distill.Tests.csproj --no-build
+    source: auto
+    timeout: 600
+    stopOnFailure: true
+    dependsOn:
+    - build
+  format:
+    kind: format
+    command: dotnet format --verify-no-changes
+    source: generic
+    timeout: 300
+    stopOnFailure: true
+    dependsOn:
+    - build

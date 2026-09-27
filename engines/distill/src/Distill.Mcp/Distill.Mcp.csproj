@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Distill.Cli\Distill.Cli.csproj" />
+    <ProjectReference Include="..\Distill.Cli.Host\Distill.Cli.Host.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+
+  <Target Name="CopyDistillCliHostToOutput" AfterTargets="Build">
+    <ItemGroup>
+      <_DistillCliHost Include="$(MSBuildThisFileDirectory)..\Distill.Cli.Host\bin\$(Configuration)\$(TargetFramework)\distill.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_DistillCliHost)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="ModelContextProtocol" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>distill-mcp</AssemblyName>
+    <Description>Distill MCP server: read-only Failure Pack, diagnostics, raw artifact, and doctor tools.</Description>
+    <PackageId>distill-mcp</PackageId>
+    <PackageTags>distill;verification;mcp;developer-tools</PackageTags>
+    <Authors>Distill contributors</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackAsTool>true</PackAsTool>
+    <PackageType>McpServer</PackageType>
+    <ToolCommandName>distill-mcp</ToolCommandName>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)..\..\..\..\artifacts\packages\</PackageOutputPath>
+    <McpServerRegistryName>io.github.oxvxoro/distill-mcp</McpServerRegistryName>
+    <McpServerPackageArgumentsJson>[
+        {
+          "type": "named",
+          "name": "root",
+          "value": "--root",
+          "valueHint": "workspaceRoot"
+        }
+      ]</McpServerPackageArgumentsJson>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)..\..\..\..\build\McpServerPack.targets" />
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Distill.Tests" />
+  </ItemGroup>
+
+</Project>

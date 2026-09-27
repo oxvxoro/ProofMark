@@ -1,0 +1,311 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  codemap:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: engines/codemap
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore CodeMap.slnx
+      - run: dotnet build CodeMap.slnx --no-restore -warnaserror
+      - run: dotnet test CodeMap.slnx --no-build
+
+  distill:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: engines/distill
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore Distill.sln
+      - run: dotnet build Distill.sln --no-restore
+      - run: dotnet test Distill.sln --no-build
+
+  distill-path:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: engines/distill
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore Distill.sln
+      - run: dotnet build Distill.sln --no-restore
+      - run: dotnet test tests/Distill.Tests/Distill.Tests.csproj --no-build --filter "FullyQualifiedName~TrxParserTests|FullyQualifiedName~MtpCommandBuilderTests|FullyQualifiedName~MtpReportParserTests|FullyQualifiedName~VstestCommandBuilderTests|FullyQualifiedName~VstestDualLoggerTests|FullyQualifiedName~EvidenceCorrelatorTests|FullyQualifiedName~DistillPathTests|FullyQualifiedName~JsonlTestResultParserTests"
+
+  proof:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore Proof.slnx
+      - run: dotnet build Proof.slnx --no-restore
+      - run: dotnet test tests/Proof.Tests --no-build
+      - name: Proof config validate
+        run: dotnet run --project src/Proof.Cli.Host/Proof.Cli.Host.csproj --no-build -- config validate
+      - name: Restore .proof/cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .proof/cache
+          key: proof-cache-${{ runner.os }}-quick-${{ hashFiles('proof.yml', 'distill.yml') }}
+          restore-keys: |
+            proof-cache-${{ runner.os }}-quick-
+      - name: Restore proof derived caches
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .proof/surface
+            .proof/base-index
+          key: proof-surface-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            proof-surface-${{ runner.os }}-
+      - name: Proof verify
+        uses: ./.github/actions/proof-verify
+        with:
+          output: json
+          require-signed: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.fork == false }}
+        env:
+          PROOF_ATTESTATION_HMAC_KEY: ${{ secrets.PROOF_ATTESTATION_HMAC_KEY }}
+      - name: Save .proof/cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .proof/cache
+          key: proof-cache-${{ runner.os }}-quick-${{ hashFiles('proof.yml', 'distill.yml') }}-${{ github.run_id }}
+      - name: Save proof derived caches
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .proof/surface
+            .proof/base-index
+          key: proof-surface-${{ runner.os }}-${{ github.sha }}
+      - name: Upload proof artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: proof-certificate
+          path: |
+            .proof/certificates/**
+            .distill/runs/**
+          if-no-files-found: warn
+
+  proof-windows:
+    # Windows 기본 프로파일 검증. 경로 구분자, 프로세스 파이프, MSBuild 탐색이 Linux와 다르다.
+    # Linux `proof` 잡이 PR 코멘트를 담당하고, 이 잡은 자기 인증서만 게이트한다.
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore Proof.slnx
+      - run: dotnet build Proof.slnx --no-restore
+      - name: Proof verify
+        uses: ./.github/actions/proof-verify
+        with:
+          output: json
+          comment-pr: 'false'
+          require-signed: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.fork == false }}
+        env:
+          PROOF_ATTESTATION_HMAC_KEY: ${{ secrets.PROOF_ATTESTATION_HMAC_KEY }}
+      - name: Upload proof artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: proof-certificate-windows
+          path: |
+            .proof/certificates/**
+            .distill/runs/**
+          if-no-files-found: warn
+
+  proof-full:
+    # Distill full 프로파일. quick와 같은 analyzers에 distill-tests, codemap-tests가 더해진다.
+    # 이 잡과 `proof` 모두 continue-on-error가 아니다. NOT_READY 또는 머지 차단 UNCERTAIN이면 실패한다.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore Proof.slnx
+      - run: dotnet build Proof.slnx --no-restore
+      - name: Restore .proof/cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .proof/cache
+          key: proof-cache-${{ runner.os }}-full-${{ hashFiles('proof.yml', 'distill.yml') }}
+          restore-keys: |
+            proof-cache-${{ runner.os }}-full-
+      - name: Restore proof derived caches
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .proof/surface
+            .proof/base-index
+          key: proof-surface-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            proof-surface-${{ runner.os }}-
+      - name: Proof verify (full profile)
+        uses: ./.github/actions/proof-verify
+        with:
+          profile: full
+          output: json
+          require-signed: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.fork == false }}
+        env:
+          PROOF_ATTESTATION_HMAC_KEY: ${{ secrets.PROOF_ATTESTATION_HMAC_KEY }}
+      - name: Save .proof/cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .proof/cache
+          key: proof-cache-${{ runner.os }}-full-${{ hashFiles('proof.yml', 'distill.yml') }}-${{ github.run_id }}
+      - name: Save proof derived caches
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .proof/surface
+            .proof/base-index
+          key: proof-surface-${{ runner.os }}-${{ github.sha }}
+
+  pack:
+    # 게이트: 도구 패키지 다섯 개가 깨끗한 피드에서 팩·설치되고, 패키징된 proof가
+    # 독립 소비자 저장소를 PROVEN으로 인증하며, 두 MCP 서버가 설치 레이아웃에서 도구 호출에 응답해야 한다.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore Proof.slnx
+      - name: Pack proof, proof-mcp, distill, distill-mcp, Proofmark.CodeMap
+        run: |
+          dotnet pack src/Proof.Cli.Host/Proof.Cli.Host.csproj -c Release --no-restore -o artifacts/packages
+          dotnet pack src/Proof.Mcp/Proof.Mcp.csproj -c Release --no-restore -o artifacts/packages
+          dotnet pack engines/distill/src/Distill.Cli.Host/Distill.Cli.Host.csproj -c Release --no-restore -o artifacts/packages
+          dotnet pack engines/distill/src/Distill.Mcp/Distill.Mcp.csproj -c Release --no-restore -o artifacts/packages
+          dotnet pack engines/codemap/src/CodeMap.Cli/CodeMap.Cli.csproj -c Release --no-restore -o artifacts/packages
+      - name: Install the packed tools and smoke them
+        run: |
+          version="$(grep -oP '(?<=<VersionPrefix>)[^<]+' Version.props)"
+          # 로컬 패키지만 사용한다. nuget.org에 같은 ID의 무관한 패키지가 있다.
+          config="$RUNNER_TEMP/packed.nuget.config"
+          printf '<configuration><packageSources><clear /><add key="packed" value="%s" /></packageSources></configuration>\n' "$PWD/artifacts/packages" > "$config"
+          for tool in proof proof-mcp distill distill-mcp Proofmark.CodeMap; do
+            dotnet tool install "$tool" --version "$version" --tool-path ./packed-tools --configfile "$config"
+          done
+          ./packed-tools/proof --version
+          ./packed-tools/distill --help >/dev/null
+          ./packed-tools/codemap --help >/dev/null
+      - name: Consumer golden (packed tools on a standalone simple-service repo)
+        run: python3 .github/scripts/consumer_golden.py ./packed-tools fixtures/proof/simple-service "$RUNNER_TEMP/consumer-golden"
+      - name: MCP tool smoke (proof-mcp, distill-mcp, codemap mcp)
+        run: |
+          python3 .github/scripts/mcp_tool_smoke.py proof ./packed-tools/proof-mcp "$RUNNER_TEMP/consumer-golden"
+          python3 .github/scripts/mcp_tool_smoke.py distill ./packed-tools/distill-mcp "$RUNNER_TEMP/consumer-golden"
+          python3 .github/scripts/mcp_tool_smoke.py codemap ./packed-tools/codemap "$RUNNER_TEMP/consumer-golden"
+      - name: Upload packed tool packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: tool-packages
+          path: artifacts/packages/
+          if-no-files-found: error
+      - name: Upload consumer golden certificate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: consumer-golden-certificate
+          path: ${{ runner.temp }}/consumer-golden/.proof/certificates/**
+          if-no-files-found: warn
+      - name: List packages
+        run: ls -l artifacts/packages
+
+  pack-windows:
+    needs: pack
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Download tool packages from ubuntu pack job
+        uses: actions/download-artifact@v4
+        with:
+          name: tool-packages
+          path: artifacts/packages
+      - name: Verify downloaded packages
+        shell: pwsh
+        run: |
+          $pkgDir = Join-Path $env:GITHUB_WORKSPACE 'artifacts/packages'
+          if (-not (Test-Path $pkgDir)) { throw "Missing package directory: $pkgDir" }
+          $nupkgs = Get-ChildItem -Path $pkgDir -Filter '*.nupkg'
+          if ($nupkgs.Count -lt 5) {
+            throw "Expected at least 5 .nupkg files in $pkgDir, found $($nupkgs.Count): $($nupkgs.Name -join ', ')"
+          }
+          $nupkgs | ForEach-Object { Write-Host $_.FullName }
+      - name: Install packed tools on Windows
+        shell: pwsh
+        run: |
+          [xml]$props = Get-Content -Path Version.props
+          $version = $props.Project.PropertyGroup.VersionPrefix
+          $pkgDir = (Resolve-Path (Join-Path $env:GITHUB_WORKSPACE 'artifacts/packages')).Path
+          $config = Join-Path $env:RUNNER_TEMP 'packed.nuget.config'
+          @"
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="packed" value="$pkgDir" />
+            </packageSources>
+          </configuration>
+          "@ | Set-Content -Path $config -Encoding utf8
+          foreach ($tool in @('proof', 'proof-mcp', 'distill', 'distill-mcp', 'Proofmark.CodeMap')) {
+            dotnet tool install $tool --version $version --tool-path ./packed-tools --configfile $config
+          }
+          ./packed-tools/proof --version
+          ./packed-tools/distill --help | Out-Null
+          ./packed-tools/codemap --help | Out-Null
+      - name: MCP tool smoke (Windows packed layout)
+        shell: bash
+        run: |
+          python3 .github/scripts/consumer_golden.py ./packed-tools fixtures/proof/simple-service "$RUNNER_TEMP/consumer-golden-win"
+          python3 .github/scripts/mcp_tool_smoke.py proof ./packed-tools/proof-mcp "$RUNNER_TEMP/consumer-golden-win"
+          python3 .github/scripts/mcp_tool_smoke.py distill ./packed-tools/distill-mcp "$RUNNER_TEMP/consumer-golden-win"
+          python3 .github/scripts/mcp_tool_smoke.py codemap ./packed-tools/codemap "$RUNNER_TEMP/consumer-golden-win"

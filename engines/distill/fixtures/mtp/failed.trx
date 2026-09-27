@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="33333333-3333-3333-3333-333333333333" name="Distill MTP fixture" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Results>
+    <UnitTestResult testId="eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee" testName="MtpSample.AlwaysFails" outcome="Failed" duration="00:00:00.0150000">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.True() Failure</Message>
+          <StackTrace>at MtpSample.AlwaysFails() in C:/repo/MtpSample.cs:line 8</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="MtpSample.AlwaysFails" id="eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee">
+      <TestMethod className="MtpSample" name="AlwaysFails" />
+    </UnitTest>
+  </TestDefinitions>
+</TestRun>

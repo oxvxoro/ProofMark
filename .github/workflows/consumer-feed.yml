@@ -1,0 +1,49 @@
+name: Consumer feed golden
+
+# 게시된 릴리스가 GitHub Packages에서 설치되고, 독립 simple-service 소비자 저장소를
+# PROVEN으로 인증하는지 수동으로 확인한다. release.yml이 버전을 게시한 뒤에 실행한다.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '설치할 패키지 버전. 비어 있으면 Version.props를 쓴다.'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  golden:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install the tools from GitHub Packages
+        env:
+          FEED_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="${{ inputs.version }}"
+          if [ -z "$version" ]; then
+            version="$(grep -oP '(?<=<VersionPrefix>)[^<]+' Version.props)"
+          fi
+          # GitHub Packages 피드만 사용한다. nuget.org에 같은 ID의 무관한 패키지가 있다.
+          config="$RUNNER_TEMP/feed.nuget.config"
+          printf '<configuration><packageSources><clear /></packageSources></configuration>\n' > "$config"
+          dotnet nuget add source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
+            --configfile "$config" --name proofmark-feed --username "${{ github.actor }}" --password "$FEED_TOKEN" \
+            --store-password-in-clear-text
+          for tool in proof proof-mcp distill distill-mcp Proofmark.CodeMap; do
+            dotnet tool install "$tool" --version "$version" --tool-path ./feed-tools --configfile "$config"
+          done
+      - name: Consumer golden (feed-installed tools)
+        run: python3 .github/scripts/consumer_golden.py ./feed-tools fixtures/proof/simple-service "$RUNNER_TEMP/consumer-golden"
+      - name: MCP tool smoke (feed-installed tools)
+        run: |
+          python3 .github/scripts/mcp_tool_smoke.py proof ./feed-tools/proof-mcp "$RUNNER_TEMP/consumer-golden"
+          python3 .github/scripts/mcp_tool_smoke.py distill ./feed-tools/distill-mcp "$RUNNER_TEMP/consumer-golden"
+          python3 .github/scripts/mcp_tool_smoke.py codemap ./feed-tools/codemap "$RUNNER_TEMP/consumer-golden"

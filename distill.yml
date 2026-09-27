@@ -1,0 +1,84 @@
+version: 1
+
+workspace:
+  solution: Proof.slnx
+  runDir: .distill/runs
+
+testing:
+  platform: auto
+
+redaction:
+  patterns: []
+
+reliability:
+  minConfidence: 0.5
+
+profiles:
+  quick:
+    checks:
+      - build
+      - proof-tests
+      - analyzers
+
+  full:
+    checks:
+      - build
+      - proof-tests
+      - distill-tests
+      - codemap-tests
+      - analyzers
+      - apicompat
+
+checks:
+  build:
+    kind: build
+    command: dotnet build Proof.slnx
+    source: msbuild-binlog
+    timeout: 900
+    stopOnFailure: true
+    dependsOn: []
+
+  analyzers:
+    kind: analysis
+    command: dotnet build Proof.slnx -warnaserror /p:RunAnalyzersDuringBuild=true
+    source: auto
+    timeout: 900
+    stopOnFailure: false
+    dependsOn:
+      - build
+
+  proof-tests:
+    kind: test
+    command: dotnet test tests/Proof.Tests/Proof.Tests.csproj --no-build
+    source: auto
+    timeout: 600
+    stopOnFailure: true
+    dependsOn:
+      - build
+
+  distill-tests:
+    kind: test
+    command: dotnet test engines/distill/Distill.sln --no-build
+    source: auto
+    timeout: 900
+    stopOnFailure: true
+    dependsOn:
+      - build
+
+  codemap-tests:
+    kind: test
+    command: dotnet test engines/codemap/CodeMap.slnx --no-build
+    source: auto
+    timeout: 900
+    stopOnFailure: true
+    dependsOn:
+      - build
+
+  apicompat:
+    kind: apicompatibility
+    command: ""
+    source: apicompat-json
+    timeout: 900
+    stopOnFailure: false
+    dependsOn:
+      - build

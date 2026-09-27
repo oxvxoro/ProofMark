@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="22222222-2222-2222-2222-222222222222" name="Distill fixture" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Results>
+    <UnitTestResult testId="bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb" testName="SampleTests.AlwaysFails" outcome="Failed" duration="00:00:00.0100000">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.True() Failure</Message>
+          <StackTrace>at SampleTests.AlwaysFails() in C:/repo/SampleTests.cs:line 10</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult testId="cccccccc-cccc-cccc-cccc-cccccccccccc" testName="SampleTests.AlsoFails" outcome="Failed" duration="00:00:00.0200000">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.Equal() Failure</Message>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult testId="dddddddd-dddd-dddd-dddd-dddddddddddd" testName="SampleTests.Passes" outcome="Passed" duration="00:00:00.0010000" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="SampleTests.AlwaysFails" id="bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb">
+      <TestMethod className="SampleTests" name="AlwaysFails" />
+    </UnitTest>
+    <UnitTest name="SampleTests.AlsoFails" id="cccccccc-cccc-cccc-cccc-cccccccccccc">
+      <TestMethod className="SampleTests" name="AlsoFails" />
+    </UnitTest>
+    <UnitTest name="SampleTests.Passes" id="dddddddd-dddd-dddd-dddd-dddddddddddd">
+      <TestMethod className="SampleTests" name="Passes" />
+    </UnitTest>
+  </TestDefinitions>
+</TestRun>

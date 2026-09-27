@@ -1,0 +1,29 @@
+version: 2
+
+proof:
+  base:
+    strategy: mergeBase
+    ref: origin/master
+
+analysis:
+  solution: SimpleService.sln
+
+verification:
+  distillConfig: distill.yml
+  distillProfile: quick
+
+policy:
+  publicApiCompatibility: advisory
+  internalConsumerCompatibility: advisory
+  staticAnalysis: off
+  architecture: off
+  appContract: off
+  testMaps:
+    - symbol: "OrderService.Cancel"
+      tests:
+        - SimpleService.Tests.OrderServiceTests.Cancel_RefundsPayment
+  testMappingProjects:
+    - App
+  ci:
+    failOnUncertainCodes:
+      - REQUIRED_EVIDENCE_MISSING

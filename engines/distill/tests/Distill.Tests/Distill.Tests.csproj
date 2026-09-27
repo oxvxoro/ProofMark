@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="Xunit" />
+        <Using Include="Distill.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\fixtures\**\*" CopyToOutputDirectory="PreserveNewest" Link="fixtures\%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Distill.Core\Distill.Core.csproj" />
+    <ProjectReference Include="..\..\src\Distill.Runner\Distill.Runner.csproj" />
+    <ProjectReference Include="..\..\src\Distill.Build.MSBuild\Distill.Build.MSBuild.csproj" />
+    <ProjectReference Include="..\..\src\Distill.Reporting\Distill.Reporting.csproj" />
+    <ProjectReference Include="..\..\src\Distill.Testing.Abstractions\Distill.Testing.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Distill.TestLogger\Distill.TestLogger.csproj" />
+    <ProjectReference Include="..\..\src\Distill.Testing.VSTest\Distill.Testing.VSTest.csproj" />
+    <ProjectReference Include="..\..\src\Distill.Git\Distill.Git.csproj" />
+    <ProjectReference Include="..\..\src\Distill.Analysis.Sarif\Distill.Analysis.Sarif.csproj" />
+    <ProjectReference Include="..\..\src\Distill.Testing.MTP\Distill.Testing.MTP.csproj" />
+    <ProjectReference Include="..\..\src\Distill.Cli\Distill.Cli.csproj" />
+    <ProjectReference Include="..\..\src\Distill.Mcp\Distill.Mcp.csproj" />
+    <ProjectReference Include="..\..\src\Distill.Execution\Distill.Execution.csproj" />
+  </ItemGroup>
+
+</Project>

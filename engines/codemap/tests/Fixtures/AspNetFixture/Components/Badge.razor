@@ -1,0 +1,6 @@
+@* 이름은 모호하지만 네임스페이스로 한정된 픽스처 2개 중 1 (plan §6, P1 수정). 다른
+   RazorComponent 산출물이 Components/Alt/Badge.razor를 통해 이 파일의 단순 이름
+   (Badge)을 공유한다. OrderForm.razor는 완전 한정 태그
+   <AspNetFixture.Components.Badge />로 이것을 참조하며, 여기로 해소되어야 한다(Alt/Badge.razor가
+   아니고, 엣지가 아예 없어도 안 된다). 이 컴포넌트에 코드비하인드가 없어도 마찬가지다. *@
+<span class="badge">badge</span>

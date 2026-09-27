@@ -1,0 +1,15 @@
+DISTILL VERIFY: FAIL
+Profile: quick
+Run: .distill/runs/d-golden-scenario
+Check build (build): Pass exit=0 source=msbuild-binlog
+  Raw: .distill/runs/d-golden-scenario/build/build.binlog
+Check unit (test): Fail exit=1 source=vstest-logger
+  Raw: .distill/runs/d-golden-scenario/unit/tests.events.jsonl
+
+Primary diagnostics:
+Failing.One  TEST_FAILED  Assert.True() Failure
+Expected: True
+Actual:   False  [vstest-logger, confidence=1.00]  {frame-changed-file,frame-in-hunk,test-file-changed,test-failure}
+
+Git diff: .distill/runs/d-golden-scenario/git/diff.patch
+Failure pack: .distill/runs/d-golden-scenario/failure-pack.txt

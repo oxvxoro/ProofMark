@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="11111111-1111-1111-1111-111111111111" name="Distill fixture" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Results>
+    <UnitTestResult testId="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" testName="SampleTests.AlwaysFails" outcome="Failed" duration="00:00:00.0100000">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.True() Failure</Message>
+          <StackTrace>at SampleTests.AlwaysFails() in C:/repo/SampleTests.cs:line 10</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="SampleTests.AlwaysFails" id="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa">
+      <TestMethod className="SampleTests" name="AlwaysFails" />
+    </UnitTest>
+  </TestDefinitions>
+</TestRun>

@@ -1,0 +1,11 @@
+<Project>
+
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Version.props" />
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Build.Framework" VersionOverride="17.11.48">
+      <PrivateAssets>all</PrivateAssets>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>

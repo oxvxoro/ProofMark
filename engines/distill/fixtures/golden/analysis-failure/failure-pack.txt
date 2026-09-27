@@ -1,0 +1,11 @@
+DISTILL VERIFY: FAIL
+Profile: full
+Run: .distill/runs/d-golden-scenario
+Check analysis (analysis): Fail exit=1 source=sarif
+  Raw: .distill/runs/d-golden-scenario/analysis/analysis.sarif
+
+Primary diagnostics:
+DEMO002  src/Demo.cs:12  Unsafe API usage  [sarif, confidence=1.00]  {changed-file}
+
+Git diff: .distill/runs/d-golden-scenario/git/diff.patch
+Failure pack: .distill/runs/d-golden-scenario/failure-pack.txt

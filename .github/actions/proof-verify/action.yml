@@ -1,0 +1,212 @@
+name: 'Proof verify'
+description: >
+  `proof verify`를 실행하고, dogfood CI와 같이 종료 코드를 매핑하며, step
+  summary를 만들고, 인증서를 검증하고, 풀 리퀘스트에 코멘트를 단다.
+  GitHub Checks API는 호출하지 않는다.
+inputs:
+  profile:
+    description: 'Distill 프로파일 재정의(예: full). 비어 있으면 proof.yml을 쓴다.'
+    default: ''
+  output:
+    description: '검증 출력 형식(compact 또는 json).'
+    default: 'json'
+  require-signed:
+    description: 'HMAC 서명이 있는 증명을 요구한다. PROOF_ATTESTATION_HMAC_KEY가 있을 때만 플래그를 넘긴다.'
+    default: 'false'
+  allow-exceptions:
+    description: >
+      true이면 NOT_READY 또는 머지 차단 UNCERTAIN이, 열린 필수 의무가 모두
+      유효한 서명 정책 예외로 덮였을 때만 CI 머지 게이트를 지울 수 있다.
+      거버넌스일 뿐이다. 인증서 판정은 바뀌지 않는다.
+    default: 'false'
+  comment-pr:
+    description: 'Proof PR 코멘트를 만들거나 갱신한다(pull_request 이벤트만).'
+    default: 'true'
+  dotnet-build:
+    description: '--no-build 없이 실행한다. false이면 미리 빌드되어 있다고 본다.'
+    default: 'false'
+  cli-project:
+    description: 'Proof CLI 프로젝트 경로.'
+    default: 'src/Proof.Cli.Host/Proof.Cli.Host.csproj'
+  proof-command:
+    description: 'PATH에 설치된 proof CLI(예: proof). 비어 있으면 dotnet run --project cli-project를 쓴다.'
+    default: ''
+outputs:
+  summary-path:
+    description: '최신 *.summary.json 사이드카 경로.'
+    value: ${{ steps.paths.outputs.summary-path }}
+  certificate-path:
+    description: '최신 인증서 본문 JSON 경로.'
+    value: ${{ steps.paths.outputs.certificate-path }}
+  exit-code:
+    description: '`proof verify`의 원본 종료 코드.'
+    value: ${{ steps.verify.outputs.exit-code }}
+runs:
+  using: composite
+  steps:
+    - id: verify
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        # 거버넌스 보조. 호출자가 켰을 때만, 유효한 서명 예외가 머지 차단 종료 코드를 지울 수 있다.
+        # 인증서는 수정하지 않는다.
+        exceptions_clear_merge_block() {
+          if [ ! -d .proof/certificates ]; then
+            return 1
+          fi
+          local cert
+          cert="$(find .proof/certificates -name '*.json' ! -name '*.summary.json' -print 2>/dev/null | sort | tail -n 1)"
+          if [ -z "$cert" ]; then
+            return 1
+          fi
+          set +e
+          if [ -n "${{ inputs.proof-command }}" ]; then
+            ${{ inputs.proof-command }} exception evaluate --gate --certificate "$cert"
+          else
+            dotnet run --project "${{ inputs.cli-project }}" $no_build -- exception evaluate --gate --certificate "$cert"
+          fi
+          local exc=$?
+          set -e
+          return "$exc"
+        }
+
+        no_build=""
+        if [ "${{ inputs.dotnet-build }}" != "true" ]; then
+          no_build="--no-build"
+        fi
+        profile_args=()
+        if [ -n "${{ inputs.profile }}" ]; then
+          profile_args=(--profile "${{ inputs.profile }}")
+        fi
+
+        set +e
+        if [ -n "${{ inputs.proof-command }}" ]; then
+          ${{ inputs.proof-command }} verify --output "${{ inputs.output }}" "${profile_args[@]}"
+        else
+          dotnet run --project "${{ inputs.cli-project }}" $no_build -- verify --output "${{ inputs.output }}" "${profile_args[@]}"
+        fi
+        code=$?
+        set -e
+
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        case "$code" in
+          0)
+            echo "Proof completed: ready/no-change"
+            ;;
+          1)
+            # NOT_READY는 하드 실패다. policy.ci.failOnUncertainCodes에 있는 코드로 인한
+            # UNCERTAIN도 종료 코드 1(머지 차단)이다. 목록에 없는 UNCERTAIN은 권고(3)다.
+            if [ "${{ inputs.allow-exceptions }}" = "true" ] && exceptions_clear_merge_block; then
+              echo "Proof completed: NOT_READY or merge-block UNCERTAIN, cleared by signed policy exceptions (governance only; certificate verdict unchanged)"
+            else
+              echo "Proof completed: NOT_READY or merge-block UNCERTAIN"
+              exit 1
+            fi
+            ;;
+          3)
+            echo "Proof completed: UNCERTAIN (advisory)"
+            ;;
+          2|4)
+            echo "Proof config/infra failure: exit $code"
+            exit "$code"
+            ;;
+          *)
+            echo "Proof unexpected exit: $code"
+            exit "$code"
+            ;;
+        esac
+
+        if [ -z "$(find .proof/certificates -name '*.json' ! -name '*.summary.json' -print -quit 2>/dev/null)" ]; then
+          echo "Proof completed but no certificate was written"
+          exit 1
+        fi
+
+    - id: paths
+      if: always()
+      shell: bash
+      run: |
+        summary="$(find .proof/certificates -name '*.summary.json' -print 2>/dev/null | sort | tail -n 1)"
+        certificate="$(find .proof/certificates -name '*.json' ! -name '*.summary.json' -print 2>/dev/null | sort | tail -n 1)"
+        echo "summary-path=$summary" >> "$GITHUB_OUTPUT"
+        echo "certificate-path=$certificate" >> "$GITHUB_OUTPUT"
+
+    - name: Proof step summary
+      if: always()
+      shell: bash
+      run: |
+        latest="${{ steps.paths.outputs.summary-path }}"
+        if [ -z "$latest" ]; then
+          echo "No proof summary sidecar found" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+        fi
+        {
+          if [ -n "${{ inputs.proof-command }}" ]; then
+            ${{ inputs.proof-command }} summary --certificate "$latest" --format markdown
+          else
+            dotnet run --project "${{ inputs.cli-project }}" --no-build -- summary --certificate "$latest" --format markdown
+          fi
+          echo
+          if [ "${{ inputs.require-signed }}" = "true" ] && [ -z "${PROOF_ATTESTATION_HMAC_KEY:-}" ]; then
+            echo "attestation: unsigned (fork or missing secret)"
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Proof certificate verify
+      if: success()
+      shell: bash
+      run: |
+        latest="${{ steps.paths.outputs.certificate-path }}"
+        if [ -z "$latest" ]; then
+          echo "No certificate found to verify"
+          exit 1
+        fi
+        require_signed_flag=""
+        # 포크 PR은 저장소 시크릿에 접근하지 못한다. 키가 비어 있으면 실패 대신 서명 없는 봉투를 허용한다.
+        if [ "${{ inputs.require-signed }}" = "true" ] && [ -n "${PROOF_ATTESTATION_HMAC_KEY:-}" ]; then
+          require_signed_flag="--require-signed"
+        fi
+        if [ -n "${{ inputs.proof-command }}" ]; then
+          ${{ inputs.proof-command }} certificate verify "$latest" $require_signed_flag
+        else
+          dotnet run --project "${{ inputs.cli-project }}" --no-build -- certificate verify "$latest" $require_signed_flag
+        fi
+
+    - name: Proof PR comment
+      if: ${{ always() && inputs.comment-pr == 'true' && github.event_name == 'pull_request' }}
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        latest="${{ steps.paths.outputs.summary-path }}"
+        if [ -z "$latest" ]; then
+          echo "No proof summary sidecar; skipping PR comment" >&2
+          exit 0
+        fi
+        if [ -n "${{ inputs.proof-command }}" ]; then
+          body="$(${{ inputs.proof-command }} summary --certificate "$latest" --format markdown)"
+        else
+          body="$(dotnet run --project "${{ inputs.cli-project }}" --no-build -- summary --certificate "$latest" --format markdown)"
+        fi
+        marker='<!-- proof-summary -->'
+        comment_file="$(mktemp)"
+        {
+          echo "$marker"
+          echo
+          echo "$body"
+        } > "$comment_file"
+
+        comment_id="$(gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+          --jq ".[] | select(.body | contains(\"$marker\")) | .id" | tail -n 1)"
+        if [ -n "$comment_id" ]; then
+          if ! gh api --method PATCH "repos/${{ github.repository }}/issues/comments/$comment_id" \
+            -F body=@"$comment_file" >/dev/null; then
+            echo "Warning: failed to update the Proof PR comment (fork may lack write access); verify result is unaffected" >&2
+          fi
+        else
+          if ! gh api --method POST "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+            -F body=@"$comment_file" >/dev/null; then
+            echo "Warning: failed to create the Proof PR comment (fork may lack write access); verify result is unaffected" >&2
+          fi
+        fi
+        rm -f "$comment_file"

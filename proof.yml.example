@@ -1,0 +1,49 @@
+version: 2
+
+proof:
+  base:
+    strategy: mergeBase
+    ref: origin/main
+
+analysis:
+  # Set before `proof config validate` / verify (must exist under the repo root).
+  solution: YourSolution.slnx
+  indexBaseRevision: false
+  impact:
+    profile: code
+
+verification:
+  distillConfig: distill.yml
+  distillProfile: quick
+  cache: false
+
+policy:
+  publicApiCompatibility: required
+  internalConsumerCompatibility: advisory
+  staticAnalysis: required
+  appContract: off
+  architecture: off
+  # Required P005 applies only to projects listed here (exact .csproj name,
+  # case-insensitive). Omitted or empty means every changed symbol may get
+  # required P005.
+  testMappingProjects:
+    - Your.Core
+    - Your.Engine
+  testMaps:
+    - symbol: "OrderService.Cancel"
+      tests:
+        - Your.Tests.OrderServiceTests.Cancel_keeps_order
+  paths:
+    - match: "docs/**"
+      effect: ignore
+  ci:
+    failOnUncertainCodes:
+      - CHANGE_DELETION_ANALYSIS_UNAVAILABLE
+      - CHANGE_CAPTURE_UNTRACKED_FAILED
+      - SOURCE_FRESHNESS_DRIFT
+      - REQUIRED_EVIDENCE_MISSING
+  uncertainty:
+    heuristicImpact: advisory
+    locationUnknown: blocking
+    impactTruncated: blocking
+    callerTruncated: blocking

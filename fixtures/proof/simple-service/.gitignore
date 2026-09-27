@@ -1,0 +1,6 @@
+bin/
+obj/
+.codemap/
+.distill/
+.proof/
+*.trx

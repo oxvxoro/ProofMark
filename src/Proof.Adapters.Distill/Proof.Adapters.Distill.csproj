@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Proof.Core\Proof.Core.csproj" />
+    <ProjectReference Include="..\..\engines\distill\src\Distill.Core\Distill.Core.csproj" />
+    <ProjectReference Include="..\..\engines\distill\src\Distill.Git\Distill.Git.csproj" />
+    <ProjectReference Include="..\..\engines\distill\src\Distill.Reporting\Distill.Reporting.csproj" />
+    <ProjectReference Include="..\..\engines\distill\src\Distill.Execution\Distill.Execution.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Proof.Tests" />
+  </ItemGroup>
+
+</Project>

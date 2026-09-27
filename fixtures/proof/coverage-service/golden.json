@@ -1,0 +1,7 @@
+{
+  "changedFile": "Lib/BulkDiscount.cs",
+  "original": "subtotal >= 6m",
+  "changed": "subtotal > 5m",
+  "provenRules": ["P005"],
+  "evidenceKinds": ["RUNTIME_COVERAGE"]
+}

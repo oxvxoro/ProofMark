@@ -1,0 +1,14 @@
+<Project>
+
+  <!-- Single source of truth for the version of every Proofmark tool package
+       (proof, distill, codemap). Imported by the root Directory.Build.props
+       and by engines/*/Directory.Build.props, whose own Directory.Build.props
+       shadows the root one. -->
+  <PropertyGroup>
+    <VersionPrefix>0.3.0</VersionPrefix>
+    <RepositoryUrl>https://github.com/oxvxoro/Proofmark</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/oxvxoro/Proofmark</PackageProjectUrl>
+  </PropertyGroup>
+
+</Project>

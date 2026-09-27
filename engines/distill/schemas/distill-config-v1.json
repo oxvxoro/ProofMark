@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Distill configuration v1",
+  "type": "object",
+  "required": ["version", "profiles", "checks"],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "workspace": {
+      "type": "object",
+      "properties": {
+        "solution": { "type": ["string", "null"] },
+        "runDir": { "const": ".distill/runs" }
+      },
+      "additionalProperties": false
+    },
+    "testing": {
+      "type": "object",
+      "properties": {
+        "platform": { "enum": ["auto", "vstest", "mtp"] }
+      },
+      "additionalProperties": false
+    },
+    "redaction": {
+      "type": "object",
+      "properties": {
+        "patterns": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "reliability": {
+      "type": "object",
+      "properties": {
+        "minConfidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "profiles": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["checks"],
+        "properties": {
+          "checks": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["kind", "command"],
+        "properties": {
+          "kind": { "type": "string" },
+          "command": { "type": "string" },
+          "source": { "type": "string" },
+          "timeout": { "type": "integer", "minimum": 1 },
+          "stopOnFailure": { "type": "boolean" },
+          "dependsOn": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

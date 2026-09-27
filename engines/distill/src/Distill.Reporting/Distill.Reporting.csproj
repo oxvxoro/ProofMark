@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Distill.Core\Distill.Core.csproj" />
+    <ProjectReference Include="..\Distill.Testing.Abstractions\Distill.Testing.Abstractions.csproj" />
+    <ProjectReference Include="..\Distill.Git\Distill.Git.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

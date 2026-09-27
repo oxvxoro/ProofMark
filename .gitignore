@@ -1,0 +1,48 @@
+# 빌드, IDE, 로컬 도구 산출물
+bin/
+obj/
+.vs/
+.idea/
+*.user
+*.suo
+*.binlog
+TestResults/
+BenchmarkDotNet.Artifacts/
+logs/
+.env
+.env.*
+!.env.example
+
+# 루트 artifacts: .gitkeep만 추적 (nupkg, MCP publish, 로컬 팩 실험)
+artifacts/*
+!artifacts/.gitkeep
+
+# CI·로컬 dotnet tool install (--tool-path)
+packed-tools/
+packed-tools-*/
+feed-tools/
+
+.codemap/
+.distill/
+.proof/
+.proof-e2e.*
+
+# TRX는 무시한다. Distill 골든 픽스처는 추적한다.
+*.trx
+!engines/distill/fixtures/**/*.trx
+
+# Python (CI 스크립트)
+__pycache__/
+*.py[cod]
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# 로컬 에이전트·편집기 설정
+.cursor/
+.claude/
+.opencode/
+
+opencode.json

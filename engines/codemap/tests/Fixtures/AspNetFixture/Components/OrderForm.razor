@@ -1,0 +1,13 @@
+@* 검증 대상: 자식 컴포넌트 렌더, [Parameter] 특성 바인딩, @bind, @onclick.
+   OrderForm.razor.cs가 코드비하인드 관례로 뒷받침하므로 바인딩된 멤버는 분석기가
+   해소할 수 있는 실제 Roslyn 심볼이다. 이 프로젝트는 @code 블록을 컴파일하지 않는다. *@
+<div class="order-form">
+    <input value="@CustomerName" @bind="CustomerName" />
+    <button @onclick="Submit">Submit</button>
+    <OrderSummary Total="@OrderTotal" InternalNote="ignored" />
+    <OrderStatusBadge />
+    <OrderTag />
+    <AspNetFixture.Components.Badge />
+    <Spinner />
+    <External.Library.Spinner />
+</div>

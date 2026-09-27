@@ -1,0 +1,27 @@
+version: 1
+workspace:
+  solution: SimpleService.sln
+  runDir: .distill/runs
+testing:
+  platform: auto
+profiles:
+  quick:
+    checks:
+      - build
+      - unit
+checks:
+  build:
+    kind: build
+    command: dotnet build SimpleService.sln
+    source: msbuild-binlog
+    timeout: 300
+    stopOnFailure: true
+    dependsOn: []
+  unit:
+    kind: test
+    command: dotnet test Tests/Tests.csproj --no-build
+    source: auto
+    timeout: 600
+    stopOnFailure: true
+    dependsOn:
+      - build

@@ -1,0 +1,5 @@
+{"v":1,"type":"run-start","utc":"2026-09-05T08:00:00.0000000Z"}
+{"v":1,"type":"test-result","name":"Passing.One","outcome":"passed","durationMs":1.0}
+{"v":1,"type":"test-result","name":"Passing.Two","outcome":"passed","durationMs":2.0}
+{"v":1,"type":"test-result","name":"Failing.One","outcome":"failed","durationMs":3.0,"error":"Assert.True() Failure\nExpected: True\nActual:   False","stack":"at SampleTests.AlwaysFails() in C:/repo/SampleTests.cs:line 10"}
+{"v":1,"type":"run-complete","total":3,"passed":2,"failed":1,"skipped":0}

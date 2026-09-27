@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Distill.Cli\Distill.Cli.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>distill</AssemblyName>
+    <PackageId>distill</PackageId>
+    <PackageTags>distill;verification;testing;ci;developer-tools</PackageTags>
+    <Authors>Distill contributors</Authors>
+    <Description>Deterministic, AI-friendly verification orchestrator: structured build, test, and analysis evidence with a compact Failure Pack.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>distill</ToolCommandName>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)..\..\..\..\artifacts\packages\</PackageOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\distill.yml.example" Link="distill.yml.example">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\README.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
+
+</Project>

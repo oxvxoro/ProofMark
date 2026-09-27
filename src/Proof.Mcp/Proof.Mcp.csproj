@@ -1,0 +1,77 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Proof.Cli\Proof.Cli.csproj" />
+    <ProjectReference Include="..\Proof.Cli.Host\Proof.Cli.Host.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+
+  <Target Name="CopyProofCliHostToOutput" AfterTargets="Build">
+    <ItemGroup>
+      <_ProofCliHost Include="$(MSBuildThisFileDirectory)..\Proof.Cli.Host\bin\$(Configuration)\$(TargetFramework)\proof.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_ProofCliHost)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+  </Target>
+
+  <!-- ProofToolbox는 AppContext.BaseDirectory에서 `dotnet exec proof.dll`을 실행하므로,
+       도구 패키지는 proof-mcp.dll 옆에 CLI 호스트를 실어야 한다. -->
+  <Target Name="PublishProofCliHost" AfterTargets="ComputeResolvedFilesToPublishList">
+    <PropertyGroup>
+      <_ProofCliHostDir>$(MSBuildThisFileDirectory)..\Proof.Cli.Host\bin\$(Configuration)\$(TargetFramework)\</_ProofCliHostDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <_ProofCliHostPublish Include="$(_ProofCliHostDir)proof.dll;$(_ProofCliHostDir)proof.deps.json;$(_ProofCliHostDir)proof.runtimeconfig.json" />
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(RelativePath)' == 'proof.dll' or '%(RelativePath)' == 'proof.deps.json' or '%(RelativePath)' == 'proof.runtimeconfig.json'" />
+      <ResolvedFileToPublish Include="@(_ProofCliHostPublish)" RelativePath="%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+    <Error Condition="!Exists('$(_ProofCliHostDir)proof.dll')" Text="Proof CLI host was not built: $(_ProofCliHostDir)proof.dll" />
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="ModelContextProtocol" />
+    <!-- ModelContextProtocol은 Microsoft.Build를 그래프에 끌어온다. 런타임 복사본은 빼 둔다(MSBL001). -->
+    <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.NET.StringTools" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Proof.Tests" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>proof-mcp</AssemblyName>
+    <Description>Proof MCP server: read-only plan/obligation/explain/map-suggest tools plus an explicit verify.</Description>
+    <PackageId>proof-mcp</PackageId>
+    <PackageTags>proof;verification;mcp;developer-tools</PackageTags>
+    <Authors>Proof contributors</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>adopting-proof.md</PackageReadmeFile>
+    <PackAsTool>true</PackAsTool>
+    <PackageType>McpServer</PackageType>
+    <ToolCommandName>proof-mcp</ToolCommandName>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)..\..\artifacts\packages\</PackageOutputPath>
+    <McpServerRegistryName>io.github.oxvxoro/proof-mcp</McpServerRegistryName>
+    <McpServerPackageArgumentsJson>[
+        {
+          "type": "named",
+          "name": "root",
+          "value": "--root",
+          "valueHint": "workspaceRoot"
+        }
+      ]</McpServerPackageArgumentsJson>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)..\..\build\McpServerPack.targets" />
+
+  <ItemGroup>
+    <None Include="..\..\docs\adopting-proof.md" Pack="true" PackagePath="adopting-proof.md" />
+  </ItemGroup>
+
+</Project>

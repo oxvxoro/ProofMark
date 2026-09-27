@@ -1,0 +1,44 @@
+name: Coverage golden
+
+# 팩한 도구로 testMaps 없는 coverage-service를 검증한다. 필수 P005가
+# 런타임 커버리지로만 PROVEN이 되어야 한다. 커버리지 수집이 느려서
+# 매 푸시 pack 잡에는 넣지 않는다.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 18 * * 0'
+
+permissions:
+  contents: read
+
+jobs:
+  golden:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore Proof.slnx
+      - name: Pack proof and Proofmark.CodeMap
+        run: |
+          dotnet pack src/Proof.Cli.Host/Proof.Cli.Host.csproj -c Release --no-restore -o artifacts/packages
+          dotnet pack engines/codemap/src/CodeMap.Cli/CodeMap.Cli.csproj -c Release --no-restore -o artifacts/packages
+      - name: Install the packed tools
+        run: |
+          version="$(grep -oP '(?<=<VersionPrefix>)[^<]+' Version.props)"
+          config="$RUNNER_TEMP/packed.nuget.config"
+          printf '<configuration><packageSources><clear /><add key="packed" value="%s" /></packageSources></configuration>\n' "$PWD/artifacts/packages" > "$config"
+          for tool in proof Proofmark.CodeMap; do
+            dotnet tool install "$tool" --version "$version" --tool-path ./packed-tools --configfile "$config"
+          done
+      - name: Coverage golden (required P005 closed by runtime coverage)
+        run: python3 .github/scripts/consumer_golden.py ./packed-tools fixtures/proof/coverage-service "$RUNNER_TEMP/coverage-golden"
+      - name: Upload coverage golden certificate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-golden-certificate
+          path: ${{ runner.temp }}/coverage-golden/.proof/certificates/**
+          if-no-files-found: warn

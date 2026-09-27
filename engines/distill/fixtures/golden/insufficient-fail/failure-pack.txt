@@ -1,0 +1,20 @@
+DISTILL VERIFY: UNCERTAIN
+Profile: quick
+Run: .distill/runs/d-golden-scenario
+Check unit (test): Fail exit=1 source=generic
+  Raw: ./fixtures/golden/insufficient-fail/raw.log
+
+Primary diagnostics:
+  (none captured)
+
+Sufficiency notes:
+  - FAIL without primary structured diagnostics.
+  - Test failure without named failed test.
+
+Raw excerpts:
+[unit] INSUFFICIENT STRUCTURED EVIDENCE  ./fixtures/golden/insufficient-fail/raw.log
+  Testhost crashed before emitting structured test results.
+  Process exited with code 1.
+
+Git diff: .distill/runs/d-golden-scenario/git/diff.patch
+Failure pack: .distill/runs/d-golden-scenario/failure-pack.txt

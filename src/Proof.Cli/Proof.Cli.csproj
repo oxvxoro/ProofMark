@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Proof.Core\Proof.Core.csproj" />
+    <ProjectReference Include="..\Proof.Engine\Proof.Engine.csproj" />
+    <ProjectReference Include="..\Proof.Adapters.CodeMap\Proof.Adapters.CodeMap.csproj" />
+    <ProjectReference Include="..\Proof.Adapters.Distill\Proof.Adapters.Distill.csproj" />
+    <ProjectReference Include="..\Proof.Adapters.Git\Proof.Adapters.Git.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <DisableMSBuildAssemblyCopyCheck>true</DisableMSBuildAssemblyCopyCheck>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="YamlDotNet" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Proof.Tests" />
+    <InternalsVisibleTo Include="proof-mcp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\proof.yml.example" Link="proof.yml.example">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

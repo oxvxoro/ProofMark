@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Distill.Core\Distill.Core.csproj" />
+    <ProjectReference Include="..\Distill.Runner\Distill.Runner.csproj" />
+    <ProjectReference Include="..\Distill.Build.MSBuild\Distill.Build.MSBuild.csproj" />
+    <ProjectReference Include="..\Distill.Reporting\Distill.Reporting.csproj" />
+    <ProjectReference Include="..\Distill.Testing.VSTest\Distill.Testing.VSTest.csproj" />
+    <ProjectReference Include="..\Distill.Testing.MTP\Distill.Testing.MTP.csproj" />
+    <ProjectReference Include="..\Distill.Analysis.Sarif\Distill.Analysis.Sarif.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Distill.Tests" />
+  </ItemGroup>
+
+</Project>

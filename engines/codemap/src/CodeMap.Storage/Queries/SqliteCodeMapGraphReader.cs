@@ -1,0 +1,46 @@
+using CodeMap.Core.Contracts;
+using CodeMap.Core.Models;
+using Microsoft.Data.Sqlite;
+
+namespace CodeMap.Storage.Queries;
+
+/// <summary>Engine 그래프 읽기 포트의 SQLite 구현.</summary>
+public sealed class SqliteCodeMapGraphReader : ICodeMapGraphReader
+{
+    private readonly CodeMapQueryService _service;
+
+    public SqliteCodeMapGraphReader(SqliteConnection connection)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+        _service = new CodeMapQueryService(connection);
+    }
+
+    public IReadOnlyList<IndexedSymbol> Find(string query, int maxResults = 20) => _service.Find(query, maxResults);
+    public SymbolSearchResult ResolveSymbol(string query, bool callableOnly, int maxResults) => _service.ResolveSymbol(query, callableOnly, maxResults);
+    public IndexedSymbol? FindById(string id) => _service.FindById(id);
+    public IReadOnlyDictionary<string, IndexedSymbol> FindByIds(IEnumerable<string> ids) => _service.FindByIds(ids);
+    public IReadOnlyList<IndexedFile> Files() => _service.Files();
+    public IReadOnlyDictionary<string, IndexedFile> FindFilesByIds(IEnumerable<string> ids) => _service.FindFilesByIds(ids);
+    public IReadOnlyList<IndexedSymbol> Members(IndexedSymbol symbol, int maxResults = 200) => _service.Members(symbol, maxResults);
+    public IReadOnlyList<IndexedRelation> CallerRelations(IndexedSymbol symbol, int maxResults = 200) => _service.CallerRelations(symbol, maxResults);
+    public IReadOnlyList<IndexedRelation> CalleeRelations(IndexedSymbol symbol, int depth = 1, int maxResults = 200) => _service.CalleeRelations(symbol, depth, maxResults);
+    public IReadOnlyList<IndexedRelation> ImplementationRelations(IndexedSymbol symbol, int maxResults = 200) => _service.ImplementationRelations(symbol, maxResults);
+    public IReadOnlyList<IndexedRelation> ReferencedByRelations(IndexedSymbol symbol, int maxResults = 200) => _service.ReferencedByRelations(symbol, maxResults);
+    public RelationPage<IndexedRelation> CallerRelationsPaged(IndexedSymbol symbol, int limit, int offset, double minConfidence = 0) => _service.CallerRelationsPaged(symbol, limit, offset, minConfidence);
+    public RelationPage<IndexedRelation> CalleeRelationsPaged(IndexedSymbol symbol, int depth, int limit, int offset, double minConfidence = 0) => _service.CalleeRelationsPaged(symbol, depth, limit, offset, minConfidence);
+    public RelationPage<IndexedRelation> ImplementationRelationsPaged(IndexedSymbol symbol, int limit, int offset, double minConfidence = 0) => _service.ImplementationRelationsPaged(symbol, limit, offset, minConfidence);
+    public RelationPage<ImpactItem> ImpactPaged(IndexedSymbol root, int depth, int limit, int offset, string profile) => _service.ImpactPaged(root, depth, limit, offset, profile);
+    public RelationPage<ImpactItem> FlowPaged(IndexedSymbol entry, string kind, int depth, int limit, int offset, double minConfidence) => _service.FlowPaged(entry, kind, depth, limit, offset, minConfidence);
+    public RelationPage<IndexedSymbol> MembersPaged(IndexedSymbol symbol, int limit, int offset) => _service.MembersPaged(symbol, limit, offset);
+    public IReadOnlyList<RelationQueryResult> Relations(string sourceId, string targetId, EdgeKind? edgeKind, int maxResults, double minConfidence) => _service.Relations(sourceId, targetId, edgeKind, maxResults, minConfidence);
+    public IReadOnlyList<ImpactItem> Impact(IndexedSymbol root, int depth, int maxResults, string profile) => _service.Impact(root, depth, maxResults, profile);
+    public IReadOnlyList<ImpactItem> ImpactUnion(IEnumerable<IndexedSymbol> roots, int depth, int maxResults, string profile) => _service.ImpactUnion(roots, depth, maxResults, profile);
+    public IReadOnlyList<RootedImpactItem> ImpactUnionDetailed(IReadOnlyList<IndexedSymbol> roots, int depth, int maxResults, string profile) => _service.ImpactUnionDetailed(roots, depth, maxResults, profile);
+    public IReadOnlyList<IndexedSymbol> SymbolsIntersecting(string relativePath, int startLine, int endLine, int maxResults = 500) => _service.SymbolsIntersecting(relativePath, startLine, endLine, maxResults);
+    public IReadOnlyList<IndexedSymbol> SymbolsInFiles(IReadOnlyCollection<string> relativePaths, int maxResults = 500) => _service.SymbolsInFiles(relativePaths, maxResults);
+    public IReadOnlyList<IndexedSymbol> PublicSymbols(int maxResults = 100000) => _service.PublicSymbols(maxResults);
+    public IReadOnlyList<ImpactItem> Flow(IndexedSymbol entry, string kind, int depth, int maxResults, double minConfidence) => _service.Flow(entry, kind, depth, maxResults, minConfidence);
+    public RepoMap BuildMap(string? focus, string? project, int tokenBudget) => _service.BuildMap(focus, project, tokenBudget);
+
+    public ValueTask DisposeAsync() => _service.DisposeAsync();
+}

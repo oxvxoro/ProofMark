@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <DisableMSBuildAssemblyCopyCheck>true</DisableMSBuildAssemblyCopyCheck>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" VersionOverride="18.0.1" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" VersionOverride="3.1.5" />
+    <PackageReference Include="FsCheck.Xunit" />
+    <PackageReference Include="coverlet.collector" VersionOverride="6.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Proof.Core\Proof.Core.csproj" />
+    <ProjectReference Include="..\..\src\Proof.Engine\Proof.Engine.csproj" />
+    <ProjectReference Include="..\..\src\Proof.Adapters.CodeMap\Proof.Adapters.CodeMap.csproj" />
+    <ProjectReference Include="..\..\src\Proof.Adapters.Distill\Proof.Adapters.Distill.csproj" />
+    <ProjectReference Include="..\..\src\Proof.Adapters.Git\Proof.Adapters.Git.csproj" />
+    <ProjectReference Include="..\..\src\Proof.Cli\Proof.Cli.csproj" />
+    <ProjectReference Include="..\..\src\Proof.Cli.Host\Proof.Cli.Host.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+
+  <Target Name="CopyProofCliHostToTestOutput" AfterTargets="Build">
+    <ItemGroup>
+      <_ProofCliHost Include="$(MSBuildThisFileDirectory)..\..\src\Proof.Cli.Host\bin\$(Configuration)\$(TargetFramework)\proof.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_ProofCliHost)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

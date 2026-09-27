@@ -1,0 +1,55 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\CodeMap.Core\CodeMap.Core.csproj" />
+    <ProjectReference Include="..\CodeMap.Storage\CodeMap.Storage.csproj" />
+    <ProjectReference Include="..\CodeMap.Engine\CodeMap.Engine.csproj" />
+    <ProjectReference Include="..\CodeMap.CSharp\CodeMap.CSharp.csproj" />
+    <ProjectReference Include="..\CodeMap.Mcp\CodeMap.Mcp.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" VersionOverride="2.0.0-beta4.22272.1" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>codemap</AssemblyName>
+    <PackageId>Proofmark.CodeMap</PackageId>
+    <PackageTags>codemap;code-analysis;repository;developer-tools</PackageTags>
+    <Authors>CodeMap contributors</Authors>
+    <Description>Local semantic code indexer and agent-friendly query CLI.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>AGENT_INTEGRATION.md</PackageReadmeFile>
+    <PackageReleaseNotes>Initial release with C#, JavaScript, TypeScript, HTML, and CSS indexing.</PackageReleaseNotes>
+    <PackAsTool>true</PackAsTool>
+    <PackageType>McpServer</PackageType>
+    <ToolCommandName>codemap</ToolCommandName>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)..\..\..\..\artifacts\packages\</PackageOutputPath>
+    <McpServerRegistryName>io.github.oxvxoro/Proofmark.CodeMap</McpServerRegistryName>
+    <McpServerPackageArgumentsJson>[
+        {
+          "type": "positional",
+          "value": "mcp",
+          "valueHint": "mcp"
+        },
+        {
+          "type": "named",
+          "name": "root",
+          "value": "--root",
+          "valueHint": "workspaceRoot"
+        }
+      ]</McpServerPackageArgumentsJson>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)..\..\..\..\build\McpServerPack.targets" />
+
+  <ItemGroup>
+    <None Include="..\..\docs\AGENT_INTEGRATION.md" Pack="true" PackagePath="AGENT_INTEGRATION.md" />
+  </ItemGroup>
+
+</Project>

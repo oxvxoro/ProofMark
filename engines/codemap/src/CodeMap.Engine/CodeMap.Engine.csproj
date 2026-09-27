@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\CodeMap.Core\CodeMap.Core.csproj" />
+    <ProjectReference Include="..\CodeMap.Storage\CodeMap.Storage.csproj" />
+    <ProjectReference Include="..\CodeMap.CSharp\CodeMap.CSharp.csproj" />
+    <ProjectReference Include="..\CodeMap.Web\CodeMap.Web.csproj" />
+    <ProjectReference Include="..\CodeMap.Scip\CodeMap.Scip.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="CodeMap.Core.Tests" />
+    <InternalsVisibleTo Include="Proof.Tests" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

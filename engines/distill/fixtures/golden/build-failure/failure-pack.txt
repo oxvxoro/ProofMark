@@ -1,0 +1,11 @@
+DISTILL VERIFY: FAIL
+Profile: quick
+Run: .distill/runs/d-golden-scenario
+Check build (build): Fail exit=1 source=msbuild-binlog
+  Raw: .distill/runs/d-golden-scenario/build/build.binlog
+
+Primary diagnostics:
+CS1002  src/App.cs:42  ; expected  [msbuild-binlog, confidence=1.00]  {changed-file,line-in-hunk,compiler-error}
+
+Git diff: .distill/runs/d-golden-scenario/git/diff.patch
+Failure pack: .distill/runs/d-golden-scenario/failure-pack.txt

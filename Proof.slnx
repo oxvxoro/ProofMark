@@ -1,0 +1,53 @@
+<Solution>
+  <Folder Name="/engines/codemap/src/">
+    <Project Path="engines/codemap/src/CodeMap.Cli/CodeMap.Cli.csproj" />
+    <Project Path="engines/codemap/src/CodeMap.Core/CodeMap.Core.csproj" />
+    <Project Path="engines/codemap/src/CodeMap.CSharp/CodeMap.CSharp.csproj" />
+    <Project Path="engines/codemap/src/CodeMap.Web/CodeMap.Web.csproj" />
+    <Project Path="engines/codemap/src/CodeMap.Mcp/CodeMap.Mcp.csproj" />
+    <Project Path="engines/codemap/src/CodeMap.Storage/CodeMap.Storage.csproj" />
+    <Project Path="engines/codemap/src/CodeMap.Scip/CodeMap.Scip.csproj" />
+    <Project Path="engines/codemap/src/CodeMap.Engine/CodeMap.Engine.csproj" />
+  </Folder>
+  <Folder Name="/engines/codemap/tests/">
+    <Project Path="engines/codemap/tests/CodeMap.Core.Tests/CodeMap.Core.Tests.csproj" />
+  </Folder>
+  <Folder Name="/engines/codemap/benchmarks/">
+    <Project Path="engines/codemap/benchmarks/CodeMap.Benchmarks/CodeMap.Benchmarks.csproj" />
+  </Folder>
+  <Folder Name="/engines/distill/src/">
+    <Project Path="engines/distill/src/Distill.Analysis.Sarif/Distill.Analysis.Sarif.csproj" />
+    <Project Path="engines/distill/src/Distill.Build.MSBuild/Distill.Build.MSBuild.csproj" />
+    <Project Path="engines/distill/src/Distill.Cli/Distill.Cli.csproj" />
+    <Project Path="engines/distill/src/Distill.Cli.Host/Distill.Cli.Host.csproj" />
+    <Project Path="engines/distill/src/Distill.Core/Distill.Core.csproj" />
+    <Project Path="engines/distill/src/Distill.Execution/Distill.Execution.csproj" />
+    <Project Path="engines/distill/src/Distill.Git/Distill.Git.csproj" />
+    <Project Path="engines/distill/src/Distill.Mcp/Distill.Mcp.csproj" />
+    <Project Path="engines/distill/src/Distill.Reporting/Distill.Reporting.csproj" />
+    <Project Path="engines/distill/src/Distill.Runner/Distill.Runner.csproj" />
+    <Project Path="engines/distill/src/Distill.Testing.Abstractions/Distill.Testing.Abstractions.csproj" />
+    <Project Path="engines/distill/src/Distill.Testing.MTP/Distill.Testing.MTP.csproj" />
+    <Project Path="engines/distill/src/Distill.Testing.VSTest/Distill.Testing.VSTest.csproj" />
+    <Project Path="engines/distill/src/Distill.TestLogger/Distill.TestLogger.csproj" />
+  </Folder>
+  <Folder Name="/engines/distill/tests/">
+    <Project Path="engines/distill/tests/Distill.Tests/Distill.Tests.csproj" />
+  </Folder>
+  <Folder Name="/proof/src/">
+    <Project Path="src/Proof.Core/Proof.Core.csproj" />
+    <Project Path="src/Proof.Engine/Proof.Engine.csproj" />
+    <Project Path="src/Proof.Adapters.CodeMap/Proof.Adapters.CodeMap.csproj" />
+    <Project Path="src/Proof.Adapters.Distill/Proof.Adapters.Distill.csproj" />
+    <Project Path="src/Proof.Adapters.Git/Proof.Adapters.Git.csproj" />
+    <Project Path="src/Proof.Cli/Proof.Cli.csproj" />
+    <Project Path="src/Proof.Cli.Host/Proof.Cli.Host.csproj" />
+    <Project Path="src/Proof.Mcp/Proof.Mcp.csproj" />
+  </Folder>
+  <Folder Name="/proof/tests/">
+    <Project Path="tests/Proof.Tests/Proof.Tests.csproj" />
+  </Folder>
+  <Folder Name="/proof/benchmarks/">
+    <Project Path="benchmarks/Proof.Benchmarks/Proof.Benchmarks.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Proof.Cli\Proof.Cli.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <DisableMSBuildAssemblyCopyCheck>true</DisableMSBuildAssemblyCopyCheck>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>proof</AssemblyName>
+    <PackageId>proof</PackageId>
+    <PackageTags>proof;verification;ci;developer-tools</PackageTags>
+    <Authors>Proof contributors</Authors>
+    <Description>Deterministic change verification: CodeMap impact, Distill evidence, and sufficiency certificates.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>adopting-proof.md</PackageReadmeFile>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>proof</ToolCommandName>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)..\..\artifacts\packages\</PackageOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\proof.yml.example" Link="proof.yml.example">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\docs\adopting-proof.md" Pack="true" PackagePath="adopting-proof.md" />
+  </ItemGroup>
+
+</Project>

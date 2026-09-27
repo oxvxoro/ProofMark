@@ -1,0 +1,31 @@
+{
+  "name": "protect-master",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": ["~DEFAULT_BRANCH"],
+      "exclude": []
+    }
+  },
+  "bypass_actors": [],
+  "rules": [
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": true,
+        "required_status_checks": [
+          { "context": "codemap" },
+          { "context": "distill" },
+          { "context": "distill-path" },
+          { "context": "proof" },
+          { "context": "proof-windows" },
+          { "context": "proof-full" },
+          { "context": "pack" }
+        ]
+      }
+    },
+    { "type": "deletion" },
+    { "type": "non_fast_forward" }
+  ]
+}

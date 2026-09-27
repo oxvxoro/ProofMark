@@ -1,0 +1,74 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Tag matches Version.props
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(grep -oP '(?<=<VersionPrefix>)[^<]+' Version.props)"
+          if [ "$tag" != "$version" ]; then
+            echo "Tag v$tag does not match VersionPrefix $version" >&2
+            exit 1
+          fi
+      - run: dotnet restore Proof.slnx
+      - name: Pack proof, proof-mcp, distill, distill-mcp, Proofmark.CodeMap
+        run: |
+          dotnet pack src/Proof.Cli.Host/Proof.Cli.Host.csproj -c Release --no-restore -o artifacts/packages
+          dotnet pack src/Proof.Mcp/Proof.Mcp.csproj -c Release --no-restore -o artifacts/packages
+          dotnet pack engines/distill/src/Distill.Cli.Host/Distill.Cli.Host.csproj -c Release --no-restore -o artifacts/packages
+          dotnet pack engines/distill/src/Distill.Mcp/Distill.Mcp.csproj -c Release --no-restore -o artifacts/packages
+          dotnet pack engines/codemap/src/CodeMap.Cli/CodeMap.Cli.csproj -c Release --no-restore -o artifacts/packages
+      - name: Smoke packed tools before publishing
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          config="$RUNNER_TEMP/packed.nuget.config"
+          printf '<configuration><packageSources><clear /><add key="packed" value="%s" /></packageSources></configuration>\n' "$PWD/artifacts/packages" > "$config"
+          for tool in proof proof-mcp distill distill-mcp Proofmark.CodeMap; do
+            dotnet tool install "$tool" --version "$version" --tool-path ./packed-tools --configfile "$config"
+          done
+          python3 .github/scripts/consumer_golden.py ./packed-tools fixtures/proof/simple-service "$RUNNER_TEMP/consumer-golden"
+          python3 .github/scripts/mcp_tool_smoke.py proof ./packed-tools/proof-mcp "$RUNNER_TEMP/consumer-golden"
+          python3 .github/scripts/mcp_tool_smoke.py distill ./packed-tools/distill-mcp "$RUNNER_TEMP/consumer-golden"
+          python3 .github/scripts/mcp_tool_smoke.py codemap ./packed-tools/codemap "$RUNNER_TEMP/consumer-golden"
+      - name: Publish to GitHub Packages
+        run: |
+          dotnet nuget push "artifacts/packages/*.nupkg" \
+            --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
+            --api-key "${{ secrets.GITHUB_TOKEN }}" \
+            --skip-duplicate
+      - name: NuGet login (trusted publishing)
+        uses: NuGet/login@v1
+        id: nuget_login
+        with:
+          # nuget.org 프로필명. GitHub owner와 다르면 저장소 Variables에 NUGET_USER를 둔다.
+          user: ${{ vars.NUGET_USER || github.repository_owner }}
+      - name: Publish to nuget.org
+        run: |
+          dotnet nuget push "artifacts/packages/*.nupkg" \
+            --source "https://api.nuget.org/v3/index.json" \
+            --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" \
+            --skip-duplicate
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: artifacts/packages/*.nupkg
+          if-no-files-found: error

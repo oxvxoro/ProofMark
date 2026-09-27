@@ -1,0 +1,85 @@
+version: 2
+
+proof:
+  base:
+    strategy: mergeBase
+    ref: origin/main
+
+analysis:
+  solution: Proof.slnx
+  impact:
+    maxResults: 500
+    profile: code
+  # 기준 리비전에서 삭제를 추적한다. CI는 fetch-depth 0으로 이미 받아 두므로 켠다.
+  # 로컬에서는 워크트리 인덱스 빌드 비용이 있지만,
+  # CHANGE_DELETION_ANALYSIS_UNAVAILABLE이 막히지 않게 한다.
+  indexBaseRevision: true
+
+verification:
+  distillConfig: distill.yml
+  distillProfile: quick
+  # Distill 증거 캐시(.proof/cache). 더러운 스냅샷에는 쓰지 않는다.
+  # 키는 소스 다이제스트와 재작성된 명령이고, 읽을 때 저장된 출처 다이제스트를 다시 확인한다.
+  # 커버리지 산출물은 캐시 적중으로 주지 않는다. CI는 actions/cache로 .proof/cache를
+  # 복원한다(ci.yml). 다이제스트가 맞지 않으면 버린다.
+  cache: true
+
+policy:
+  publicApiCompatibility: required
+  internalConsumerCompatibility: required
+  # SARIF 프로젝트 출처와 클론 주제 범위는 끝까지 증명되어 있다
+  # (architecture.md 정적 분석). P008은 required다. distill.yml은 quick와 full 모두에
+  # analyzers를 두므로, 기본 verify가 Distill/CodeMap 테스트 스위트 없이 P008을 닫는다.
+  # 그 스위트는 --profile full에만 있다.
+  staticAnalysis: required
+  architecture: advisory
+  # 저장소 자체 명시적 테스트 맵(P005). 범위는 좁다. 자주 바뀌는
+  # 핵심 엔진 심볼만 맵을 갖고, 나머지는 정직하게 Unresolved로 남긴다.
+  # CertificateMetadata.ProofConfigDigest로 이 파일의 다이제스트에 묶인다.
+  testMaps:
+    - symbol: "DeterministicProofPlanner.Plan"
+      tests:
+        - Proof.Tests.DeterministicProofPlannerTests.Plan_PublicChangedSymbol_AddsCompatibilityObligation
+    - symbol: "EvidenceBinder.Bind"
+      tests:
+        - Proof.Tests.EvidenceBinderTests.Bind_MatchingFailedTestCase_ReturnsNotReady
+    - symbol: "DeterministicProofEvaluator.Evaluate"
+      tests:
+        - Proof.Tests.DeterministicProofEvaluatorTests.Evaluate_AllRequiredProven_ReturnsProven
+    - symbol: "YamlTestMappingEvidenceProducer.AnalyzeAsync"
+      tests:
+        - Proof.Tests.YamlTestMappingEvidenceProducerTests.Planner_MappedChangedSymbol_AddsP004_AndDropsP005
+    - symbol: "VerificationPlanner"
+      tests:
+        - Proof.Tests.ScopedVerificationPlannerTests.ProjectObligation_WithSolutionBuildCheck_ProducesScopedClone
+  # 필수 P005(변경 심볼 테스트 매핑)는 Proof 제품 계층으로 한정한다. 그 심볼은
+  # quick 프로파일에서 proof-tests 런타임 커버리지로 닫을 수 있다. CodeMap/Distill
+  # 엔진 심볼은 보이는 권고 P005(Required: false)를 받지만, 맵이 없다고 quick CI를 막지 않는다.
+  # 일치는 CodeMap 프로젝트 이름(.csproj 이름, 대소문자 무시)의 완전 일치다.
+  testMappingProjects:
+    - Proof.Core
+    - Proof.Engine
+    - Proof.Cli
+    - Proof.Mcp
+    - Proof.Adapters.CodeMap
+    - Proof.Adapters.Distill
+    - Proof.Adapters.Git
+  paths:
+    - match: "docs/**"
+      effect: ignore
+    - match: "**/*.md"
+      effect: ignore
+  ci:
+    # 캡처/무결성 실패와, 범위 안 Proof 계층의 미해결 필수 테스트 매핑에서 머지를 막는다.
+    # P005는 YAML 맵 또는 주제가 맞는 런타임 커버리지로 quick에서 닫힌다.
+    # 범위 밖 엔진 심볼의 권고 P005는 그것만으로 막지 않는다.
+    failOnUncertainCodes:
+      - CHANGE_DELETION_ANALYSIS_UNAVAILABLE
+      - CHANGE_CAPTURE_UNTRACKED_FAILED
+      - SOURCE_FRESHNESS_DRIFT
+      - REQUIRED_EVIDENCE_MISSING
+  uncertainty:
+    heuristicImpact: advisory
+    locationUnknown: blocking
+    impactTruncated: blocking
+    callerTruncated: blocking

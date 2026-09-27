@@ -1,0 +1,26 @@
+version: 2
+
+proof:
+  base:
+    strategy: mergeBase
+    ref: origin/master
+
+analysis:
+  solution: CoverageService.sln
+
+verification:
+  distillConfig: distill.yml
+  distillProfile: quick
+
+# testMaps가 없다. required P005는 런타임 커버리지로만 닫힌다.
+policy:
+  publicApiCompatibility: advisory
+  internalConsumerCompatibility: advisory
+  staticAnalysis: off
+  architecture: off
+  appContract: off
+  testMappingProjects:
+    - Lib
+  ci:
+    failOnUncertainCodes:
+      - REQUIRED_EVIDENCE_MISSING

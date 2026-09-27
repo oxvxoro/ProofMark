@@ -1,0 +1,45 @@
+<Project>
+  <!-- 팩 시 Version과 패키지 ID로 .mcp/server.json을 생성해 nupkg 루트에 넣는다. -->
+  <PropertyGroup>
+    <McpServerRepositoryUrl Condition="'$(McpServerRepositoryUrl)' == ''">https://github.com/oxvxoro/Proofmark</McpServerRepositoryUrl>
+    <McpServerPackageArgumentsJson Condition="'$(McpServerPackageArgumentsJson)' == ''">[]</McpServerPackageArgumentsJson>
+  </PropertyGroup>
+
+  <Target Name="WriteMcpServerJson" BeforeTargets="_LoadPackInputItems">
+    <PropertyGroup>
+      <_McpServerJsonPath>$(IntermediateOutputPath)mcp-server.json</_McpServerJsonPath>
+      <_McpServerJsonContent>{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "$(McpServerRegistryName)",
+  "version": "$(Version)",
+  "packages": [
+    {
+      "registryType": "nuget",
+      "identifier": "$(PackageId)",
+      "version": "$(Version)",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": $(McpServerPackageArgumentsJson),
+      "environmentVariables": []
+    }
+  ],
+  "repository": {
+    "url": "$(McpServerRepositoryUrl)",
+    "source": "github"
+  }
+}</_McpServerJsonContent>
+    </PropertyGroup>
+    <WriteLinesToFile
+      File="$(_McpServerJsonPath)"
+      Lines="$(_McpServerJsonContent)"
+      Overwrite="true"
+      Encoding="UTF-8" />
+    <ItemGroup>
+      <None Include="$(_McpServerJsonPath)">
+        <Pack>true</Pack>
+        <PackagePath>.mcp/server.json</PackagePath>
+      </None>
+    </ItemGroup>
+  </Target>
+</Project>

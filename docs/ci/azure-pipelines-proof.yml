@@ -1,0 +1,97 @@
+# Azure Pipelines용 Proof 게이트 예시. 소비자 저장소의 azure-pipelines.yml로 복사해 쓴다.
+# 종료 코드는 GitHub proof-verify 액션과 같다. 0 통과, 1 실패, 3 통과(권고), 2와 4 실패.
+# GitHub Checks에 해당하는 게시 호출은 없다. 결과는 로그와 파이프라인 아티팩트다.
+# 서명 증명서가 필요하면 파이프라인 비밀 변수 PROOF_ATTESTATION_HMAC_KEY를 정의한다.
+# 포크 PR 빌드는 비밀을 받지 못하므로 그때는 --require-signed를 붙이지 않는다.
+
+trigger:
+  branches:
+    include: [main]
+
+pr:
+  branches:
+    include: [main]
+
+variables:
+  PROOF_VERSION: '0.3.0'
+  # 도구 피드. GitHub Packages나 Azure Artifacts 주소로 바꾼다.
+  PROOF_FEED: 'https://nuget.pkg.github.com/OWNER/index.json'
+  REQUIRE_SIGNED: 'true'
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - checkout: self
+    # indexBaseRevision: true와 베이스 비교에는 전체 이력이 필요하다.
+    fetchDepth: 0
+
+  - task: UseDotNet@2
+    inputs:
+      packageType: sdk
+      version: '10.0.x'
+
+  - bash: |
+      set -euo pipefail
+      # 피드에 인증이 필요하면 NuGetAuthenticate@1 또는 nuget.config 자격 증명을 먼저 둔다.
+      dotnet tool install --tool-path "$(Agent.ToolsDirectory)/proof" proof \
+        --version "$(PROOF_VERSION)" --add-source "$(PROOF_FEED)"
+      echo "##vso[task.prependpath]$(Agent.ToolsDirectory)/proof"
+    displayName: Install proof
+
+  - bash: |
+      set -uo pipefail
+      # 정의되지 않은 비밀은 '$(PROOF_ATTESTATION_HMAC_KEY)' 문자열로 남는다. 그 값으로 서명하지 않는다.
+      case "${PROOF_ATTESTATION_HMAC_KEY:-}" in '$('*) unset PROOF_ATTESTATION_HMAC_KEY ;; esac
+      proof verify --output json
+      code=$?
+      echo "##vso[task.setvariable variable=PROOF_EXIT]$code"
+      case "$code" in
+        0) echo "Proof completed: ready/no-change" ;;
+        1) echo "Proof completed: NOT_READY or merge-block UNCERTAIN"; exit 1 ;;
+        3) echo "Proof completed: UNCERTAIN (advisory)" ;;
+        2|4) echo "Proof config/infra failure: exit $code"; exit "$code" ;;
+        *) echo "Proof unexpected exit: $code"; exit "$code" ;;
+      esac
+      if [ -z "$(find .proof/certificates -name '*.json' ! -name '*.summary.json' -print -quit 2>/dev/null)" ]; then
+        echo "Proof completed but no certificate was written"
+        exit 1
+      fi
+    displayName: Proof verify
+    env:
+      PROOF_ATTESTATION_HMAC_KEY: $(PROOF_ATTESTATION_HMAC_KEY)
+
+  - bash: |
+      set -euo pipefail
+      latest="$(find .proof/certificates -name '*.json' ! -name '*.summary.json' -print | sort | tail -n 1)"
+      if [ -z "$latest" ]; then
+        echo "No certificate found to verify"
+        exit 1
+      fi
+      key="${PROOF_ATTESTATION_HMAC_KEY:-}"
+      # 정의되지 않은 비밀은 '$(PROOF_ATTESTATION_HMAC_KEY)' 문자열로 남는다. 빈 키로 본다.
+      case "$key" in '$('*) key="" ;; esac
+      require_signed_flag=""
+      if [ "$(REQUIRE_SIGNED)" = "true" ] && [ -n "$key" ]; then
+        require_signed_flag="--require-signed"
+      elif [ "$(REQUIRE_SIGNED)" = "true" ]; then
+        echo "attestation: unsigned (fork or missing secret)"
+      fi
+      proof certificate verify "$latest" $require_signed_flag
+      summary="$(find .proof/certificates -name '*.summary.json' -print | sort | tail -n 1)"
+      if [ -n "$summary" ]; then
+        proof summary --certificate "$summary" --format markdown
+      fi
+    displayName: Proof certificate verify
+    condition: succeeded()
+    env:
+      PROOF_ATTESTATION_HMAC_KEY: $(PROOF_ATTESTATION_HMAC_KEY)
+
+  - task: PublishPipelineArtifact@1
+    displayName: Publish proof certificate
+    condition: always()
+    # 설치나 설정 실패로 증명서 폴더가 없으면 이 단계만 경고로 끝난다.
+    continueOnError: true
+    inputs:
+      targetPath: .proof/certificates
+      artifact: proof-certificate

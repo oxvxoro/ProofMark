@@ -1,0 +1,59 @@
+using CodeMap.Core.Models;
+
+namespace CodeMap.Engine.Application.Investigation;
+
+public sealed record InvestigationCandidate(
+    IndexedSymbol Symbol,
+    IndexedEdge? Via,
+    int Depth,
+    string Provider,
+    CertaintyTier CertaintyTier,
+    double? Confidence,
+    double ProfileRelevance,
+    int EstimatedCost)
+{
+    public IReadOnlyList<string> AlsoFoundBy { get; init; } = Array.Empty<string>();
+    public LocalSliceEvidence? LocalEvidence { get; init; }
+    public InvestigationEvidenceLocation? EvidenceLocation { get; init; }
+
+    /// <summary>신뢰도는 보정된 확률이 아니라 증거 점수이다.</summary>
+    public static InvestigationCandidate FromRelation(IndexedRelation relation, int depth, string provider, double relevance = 0)
+    {
+        var tier = relation.Edge.ResolutionKind.FromResolutionKind();
+        return new InvestigationCandidate(
+            relation.Symbol,
+            relation.Edge,
+            depth,
+            provider,
+            tier,
+            relation.Edge.Confidence,
+            relevance,
+            EstimateCost(relation.Symbol, relation.Edge));
+    }
+
+    public static int EstimateCost(IndexedSymbol symbol, IndexedEdge? edge) =>
+        Math.Max(1, (symbol.DisplayName.Length + (edge?.Kind.ToString().Length ?? 0) + 12 + 3) / 4);
+
+    public static InvestigationCandidate FromLocalSlice(
+        IndexedSymbol scope,
+        LocalSliceEvidence evidence) =>
+        new(
+            scope,
+            null,
+            1,
+            "localSlice",
+            CertaintyTier.Semantic,
+            null,
+            0,
+            Math.Max(1, (evidence.Display.Length + evidence.File.Length + 12) / 4))
+        {
+            LocalEvidence = evidence,
+            EvidenceLocation = new InvestigationEvidenceLocation(
+                evidence.File,
+                evidence.Location.StartLine,
+                evidence.Location.StartColumn,
+                evidence.Location.EndLine,
+                evidence.Location.EndColumn,
+                InvestigationEvidenceLocationOrigin.LocalSlice)
+        };
+}

@@ -27,9 +27,10 @@ feed-tools/
 .proof/
 .proof-e2e.*
 
-# TRX는 무시한다. Distill 골든 픽스처는 추적한다.
+# TRX·binlog는 무시한다. Distill 골든 픽스처는 추적한다.
 *.trx
 !engines/distill/fixtures/**/*.trx
+!engines/distill/fixtures/**/*.binlog
 
 # Python (CI 스크립트)
 __pycache__/

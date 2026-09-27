@@ -1,0 +1,36 @@
+{
+  "layers": [
+    "Proof.Adapters.CodeMap",
+    "Proof.Adapters.Distill",
+    "Proof.Adapters.Git",
+    "Proof.Cli",
+    "Proof.Engine",
+    "Proof.Core",
+    "Proof.Mcp",
+    "engines/codemap",
+    "engines/distill"
+  ],
+  "forbid": [
+    ["Proof.Core", "Proof.Cli"],
+    ["Proof.Core", "Proof.Engine"],
+    ["Proof.Core", "Proof.Adapters.CodeMap"],
+    ["Proof.Core", "Proof.Adapters.Distill"],
+    ["Proof.Core", "Proof.Adapters.Git"],
+    ["Proof.Core", "Proof.Mcp"],
+    ["Proof.Engine", "Proof.Adapters.CodeMap"],
+    ["Proof.Engine", "Proof.Adapters.Distill"],
+    ["Proof.Engine", "Proof.Adapters.Git"],
+    ["Proof.Engine", "Proof.Cli"],
+    ["Proof.Engine", "Proof.Mcp"],
+    ["Proof.Adapters.CodeMap", "Proof.Cli"],
+    ["Proof.Adapters.CodeMap", "Proof.Mcp"],
+    ["Proof.Adapters.Distill", "Proof.Cli"],
+    ["Proof.Adapters.Distill", "Proof.Mcp"],
+    ["Proof.Adapters.Git", "Proof.Cli"],
+    ["Proof.Adapters.Git", "Proof.Mcp"],
+    ["engines/codemap", "engines/distill"],
+    ["engines/distill", "engines/codemap"]
+  ],
+  "maxFanIn": 40,
+  "maxFanOut": 40
+}

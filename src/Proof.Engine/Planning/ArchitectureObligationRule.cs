@@ -19,19 +19,20 @@ internal sealed class ArchitectureObligationRule : IObligationRule
         }
 
         var architectureRequired = policy.Architecture == ArchitecturePolicyMode.Required;
-        if (architectureRequired
-            && (impact.ArchitectureViolations is null || impact.ArchitectureRulesPresent != true))
+        if (architectureRequired)
         {
             context.Obligations.Add(ObligationPlanningSupport.Create(
                 "P011",
                 ObligationKind.Architecture,
-                "Architecture rules file exists and the CodeMap graph satisfies it",
+                "Architecture rules exist and the completed CodeMap analysis has no cycle or layer violations",
                 "architecture-rules",
                 required: true,
                 riskWeight: 3,
-                impact.ArchitectureViolations is null
-                    ? "architecture check did not run"
-                    : "architecture rules file missing (check ran)",
+                impact.ArchitectureRulesPresent != true
+                    ? "architecture rules file missing"
+                    : impact.ArchitectureViolations is null
+                        ? "architecture check did not run"
+                        : "architecture policy check required",
                 new ProofSubject(SubjectKind.Repository, "architecture-rules", DisplayName: "architecture-rules")));
 
             if (impact.ArchitectureViolations is null)
@@ -41,16 +42,23 @@ internal sealed class ArchitectureObligationRule : IObligationRule
         }
 
         foreach (var group in (impact.ArchitectureViolations ?? [])
-                     .GroupBy(item => item.SubjectId, StringComparer.Ordinal))
+                      .GroupBy(item => item.SubjectId, StringComparer.Ordinal))
         {
-            var kinds = group.Select(item => item.Kind)
+            var orderedViolations = group
+                .OrderBy(item => item.Kind, StringComparer.Ordinal)
+                .ThenBy(item => item.Project, StringComparer.Ordinal)
+                .ThenBy(item => item.File, StringComparer.Ordinal)
+                .ThenBy(item => item.DisplayName, StringComparer.Ordinal)
+                .ThenBy(item => item.Message, StringComparer.Ordinal)
+                .ToArray();
+            var kinds = orderedViolations.Select(item => item.Kind)
                 .Distinct(StringComparer.Ordinal)
                 .OrderBy(kind => kind, StringComparer.Ordinal)
                 .ToArray();
             var kindsKey = string.Join(',', kinds);
             var required = policy.Architecture == ArchitecturePolicyMode.Required
                 && kinds.Any(kind => kind is "cycle" or "layer");
-            var first = group.First();
+            var first = orderedViolations[0];
             var subject = first.Kind == "cycle"
                 ? new ProofSubject(SubjectKind.Project, group.Key, first.Project, first.File, first.DisplayName)
                 : new ProofSubject(SubjectKind.Symbol, group.Key, first.Project, first.File, first.DisplayName);

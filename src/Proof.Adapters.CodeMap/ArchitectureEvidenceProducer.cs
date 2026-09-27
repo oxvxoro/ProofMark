@@ -44,12 +44,22 @@ public sealed class ArchitectureEvidenceProducer : IArchitectureEvidenceProducer
         foreach (var obligation in obligations)
         {
             index++;
-            var status = obligation.SubjectId == "architecture-rules"
+            var architectureKinds = (impact.ArchitectureViolations ?? [])
+                .Where(item => item.Kind is "cycle" or "layer")
+                .ToArray();
+            var analysisCompleted = impact.ArchitectureRulesPresent == true
+                                    && impact.ArchitectureViolations is not null
+                                    && !string.IsNullOrWhiteSpace(impact.ArchitectureRulesDigest)
+                                    && !string.IsNullOrWhiteSpace(digest)
+                                    && string.Equals(digest, impact.SourceDigest, StringComparison.Ordinal);
+            var status = !analysisCompleted
                 ? EvidenceStatus.Inconclusive
-                : (impact.ArchitectureViolations ?? []).Any(item =>
-                        string.Equals(item.SubjectId, obligation.SubjectId, StringComparison.Ordinal))
-                    ? EvidenceStatus.Fail
-                    : EvidenceStatus.Pass;
+                : obligation.SubjectId == "architecture-rules"
+                    ? architectureKinds.Length == 0 ? EvidenceStatus.Pass : EvidenceStatus.Fail
+                    : impact.ArchitectureViolations!.Any(item =>
+                            string.Equals(item.SubjectId, obligation.SubjectId, StringComparison.Ordinal))
+                        ? EvidenceStatus.Fail
+                        : EvidenceStatus.Pass;
 
             evidence.Add(new ProofEvidence(
                 $"ARCH{index}",
@@ -59,7 +69,8 @@ public sealed class ArchitectureEvidenceProducer : IArchitectureEvidenceProducer
                 new EvidenceProvenance(
                     "architecture",
                     CheckId: CheckId,
-                    SourceDigest: digest),
+                    SourceDigest: digest,
+                    PolicyDigest: impact.ArchitectureRulesDigest),
                 new EvidenceScope(
                     ScopeMode.Exact,
                     Subjects: obligation.SubjectId == "architecture-rules"

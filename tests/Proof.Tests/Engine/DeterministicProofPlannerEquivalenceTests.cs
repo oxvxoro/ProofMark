@@ -39,6 +39,7 @@ public sealed class DeterministicProofPlannerEquivalenceTests
         "O-P009-f7f05025|P009|ManualReview|Submodule change 'vendor/lib' is unsupported; a signed manual review is required.|vendor/lib|True|3|CHANGE_SUBMODULE_ANALYSIS_UNAVAILABLE|File|vendor/lib||vendor/lib|vendor/lib",
         "O-P010-529d74fb|P010|AppContract|App contract for 'Endpoints.Route' remains valid (RoutesTo)|app-route|True|2|app-graph edge under analysis.impact.profile=app|Symbol|app-route|App|App/Endpoints.cs|Endpoints.Route",
         "O-P011-35537a71|P011|Architecture|Architecture rule 'cycle' satisfied for 'App'|App|True|3|cycle|Project|App|App||",
+        "O-P011-309fae32|P011|Architecture|Architecture rules exist and the completed CodeMap analysis has no cycle or layer violations|architecture-rules|True|3|architecture policy check required|Repository|architecture-rules|||architecture-rules",
         "O-P011-295d3267|P011|Architecture|Architecture rule 'fan-out' satisfied for 'imp-1'|imp-1|False|1|fan-out|Symbol|imp-1|App|App/Caller.cs|Caller.Use",
         "C|C-CALLER_POTENTIALLY_TRUNCATED-bcfafe27|CALLER_POTENTIALLY_TRUNCATED|blocking||Caller collection reached a result limit",
         string.Empty

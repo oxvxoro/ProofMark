@@ -30,6 +30,8 @@ jobs:
             exit 1
           fi
       - run: dotnet restore Proof.slnx
+      - name: Distill schema and generated contract gates
+        run: dotnet test engines/distill/tests/Distill.Tests/Distill.Tests.csproj --no-restore --filter FullyQualifiedName~DistillConfigSchemaTests
       - name: Pack proof, proof-mcp, distill, distill-mcp, Proofmark.CodeMap
         run: |
           dotnet pack src/Proof.Cli.Host/Proof.Cli.Host.csproj -c Release --no-restore -o artifacts/packages

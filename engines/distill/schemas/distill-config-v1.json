@@ -67,6 +67,9 @@
           "kind": { "type": "string" },
           "command": { "type": "string" },
           "source": { "type": "string" },
+          "artifact": { "type": ["string", "null"] },
+          "project": { "type": ["string", "null"] },
+          "coverage": { "type": ["string", "null"] },
           "timeout": { "type": "integer", "minimum": 1 },
           "stopOnFailure": { "type": "boolean" },
           "dependsOn": {
@@ -74,7 +77,55 @@
             "items": { "type": "string" }
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": { "pattern": "^[pP][rR][oO][cC][eE][sS][sS]$" },
+                "source": { "pattern": "^[jJ][uU][nN][iI][tT]$" }
+              },
+              "required": ["kind", "source"]
+            },
+            "then": {
+              "required": ["artifact", "project"],
+              "properties": {
+                "artifact": { "type": "string", "minLength": 1, "pattern": "\\S" },
+                "project": { "type": "string", "minLength": 1, "pattern": "\\S" }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": { "kind": { "pattern": "^[pP][rR][oO][cC][eE][sS][sS]$" } },
+              "required": ["kind"]
+            },
+            "then": {
+              "if": {
+                "properties": { "source": { "pattern": "^[jJ][uU][nN][iI][tT]$" } },
+                "required": ["source"]
+              },
+              "else": {
+                "not": {
+                  "anyOf": [
+                    { "required": ["artifact"], "properties": { "artifact": { "type": "string" } } },
+                    { "required": ["project"], "properties": { "project": { "type": "string" } } }
+                  ]
+                }
+              }
+            },
+            "else": {
+              "not": {
+                "anyOf": [
+                  { "required": ["source"], "properties": { "source": { "pattern": "^[jJ][uU][nN][iI][tT]$" } } },
+                  { "required": ["artifact"], "properties": { "artifact": { "type": "string" } } },
+                  { "required": ["project"], "properties": { "project": { "type": "string" } } },
+                  { "required": ["coverage"], "properties": { "coverage": { "type": "string" } } }
+                ]
+              }
+            }
+          }
+        ]
       }
     }
   },

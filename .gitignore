@@ -23,6 +23,9 @@ packed-tools-*/
 feed-tools/
 
 .codemap/
+!/.codemap/
+/.codemap/*
+!/.codemap/architecture.json
 .distill/
 .proof/
 .proof-e2e.*

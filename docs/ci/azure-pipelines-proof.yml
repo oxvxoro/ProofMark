@@ -13,7 +13,7 @@ pr:
     include: [main]
 
 variables:
-  PROOF_VERSION: '0.3.0'
+  PROOF_VERSION: '0.4.0'
   # 도구 피드. GitHub Packages나 Azure Artifacts 주소로 바꾼다.
   PROOF_FEED: 'https://nuget.pkg.github.com/OWNER/index.json'
   REQUIRE_SIGNED: 'true'

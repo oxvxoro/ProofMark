@@ -1,5 +1,6 @@
 using CodeMap.Storage;
 using Proof.Core;
+using System.Security.Cryptography;
 
 namespace Proof.Adapters.CodeMap;
 
@@ -12,21 +13,39 @@ namespace Proof.Adapters.CodeMap;
 // 의미는 그대로다.
 internal static class ArchitectureCheckRunner
 {
-    public static async Task<(IReadOnlyList<ArchitectureViolationRef>? Violations, bool RulesPresent)> RunAsync(
+    public static async Task<(IReadOnlyList<ArchitectureViolationRef>? Violations, bool RulesPresent, string? RulesDigest)> RunAsync(
         string workspaceRoot,
         string databasePath,
         CancellationToken cancellationToken)
     {
-        var rulesPresent = File.Exists(Path.Combine(workspaceRoot, ".codemap", "architecture.json"));
+        var rulesPath = Path.Combine(workspaceRoot, ".codemap", "architecture.json");
+        var rulesPresent = File.Exists(rulesPath);
+        string? rulesDigest = null;
         try
         {
+            if (rulesPresent)
+            {
+                await using var rulesFile = File.OpenRead(rulesPath);
+                rulesDigest = Convert.ToHexString(await SHA256.HashDataAsync(rulesFile, cancellationToken).ConfigureAwait(false)).ToLowerInvariant();
+            }
+
             var rules = ArchitectureChecker.LoadRules(workspaceRoot);
             var projectReferences = ArchitectureChecker.LoadProjectReferences(workspaceRoot);
+            if (!rulesPresent || projectReferences.Count == 0)
+            {
+                return (null, rulesPresent, rulesDigest);
+            }
             var snapshot = await new CodeMapQueryStore(databasePath)
                 .LoadArchitectureProjectionAsync(excludeHeuristic: true, cancellationToken)
                 .ConfigureAwait(false);
             var violations = ArchitectureChecker.Check(snapshot, projectReferences, rules);
-            return (violations.Select(item => ToRef(item, snapshot)).ToArray(), rulesPresent);
+            await using var rulesFileAfter = File.OpenRead(rulesPath);
+            var rulesDigestAfter = Convert.ToHexString(await SHA256.HashDataAsync(rulesFileAfter, cancellationToken).ConfigureAwait(false)).ToLowerInvariant();
+            if (!string.Equals(rulesDigest, rulesDigestAfter, StringComparison.Ordinal))
+            {
+                return (null, rulesPresent, null);
+            }
+            return (violations.Select(item => ToRef(item, snapshot)).ToArray(), rulesPresent, rulesDigest);
         }
         catch (Exception exception) when (
             exception is IOException
@@ -39,7 +58,7 @@ internal static class ArchitectureCheckRunner
             // unresolved 경로로 바꾸며, 결코 조용한 Pass로 바꾸지 않는다.
             // JsonException은 손으로 깨진 architecture.json /
             // state.json을 다룬다. 설정 파일 오류가 verify를 크래시시켜서는 안 된다.
-            return (null, rulesPresent);
+            return (null, rulesPresent, rulesDigest);
         }
     }
 

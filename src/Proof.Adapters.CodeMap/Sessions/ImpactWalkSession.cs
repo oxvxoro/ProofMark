@@ -239,12 +239,14 @@ internal static class ImpactWalkSession
 
         IReadOnlyList<ArchitectureViolationRef>? architectureViolations = null;
         bool? architectureRulesPresent = null;
+        string? architectureRulesDigest = null;
         if (runArchitectureCheck)
         {
-            var (violations, rulesPresent) = await ArchitectureCheckRunner
+            var (violations, rulesPresent, rulesDigest) = await ArchitectureCheckRunner
                 .RunAsync(workspaceRoot, databasePath, cancellationToken).ConfigureAwait(false);
             architectureViolations = violations;
             architectureRulesPresent = rulesPresent;
+            architectureRulesDigest = rulesDigest;
         }
 
         return new ChangeImpact(
@@ -265,7 +267,8 @@ internal static class ImpactWalkSession
             request.UsedFileWideFallback,
             DeletionPathsResolved: deletionImpact?.ResolvedPaths,
             ArchitectureViolations: architectureViolations,
-            ArchitectureRulesPresent: architectureRulesPresent);
+            ArchitectureRulesPresent: architectureRulesPresent,
+            ArchitectureRulesDigest: architectureRulesDigest);
     }
 
     internal static ChangedSymbolRef ToChangedSymbolRef(IndexedSymbol symbol, TestProjectClassifier testClassifier) =>

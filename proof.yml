@@ -32,7 +32,7 @@ policy:
   # analyzers를 두므로, 기본 verify가 Distill/CodeMap 테스트 스위트 없이 P008을 닫는다.
   # 그 스위트는 --profile full에만 있다.
   staticAnalysis: required
-  architecture: advisory
+  architecture: required
   # 저장소 자체 명시적 테스트 맵(P005). 범위는 좁다. 자주 바뀌는
   # 핵심 엔진 심볼만 맵을 갖고, 나머지는 정직하게 Unresolved로 남긴다.
   # CertificateMetadata.ProofConfigDigest로 이 파일의 다이제스트에 묶인다.

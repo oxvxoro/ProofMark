@@ -1,15 +1,15 @@
 # 에이전트 통합
 
-CodeMap은 C#과 JS/TS/HTML/CSS의 로컬 의미 인덱스다. 모든 조사에 쓰지 않는다. 심볼이나 진입점을 찾고 관계를 한 단계 추적할 때만 쓴다. 범위를 벗어나면 `grep`과 파일 읽기로 넘어간다.
+CodeMap은 C#과 JS/TS/HTML/CSS를 대상으로 하는 로컬 의미 인덱스다. 모든 검색에 사용할 필요는 없다. 심볼이나 진입점을 찾고 관계를 한 단계 추적해야 할 때 사용하며, 단순한 문자열 검색은 `grep`과 파일 읽기로 처리한다.
 
 ## 최소 절차
 
-1. `codemap index` 또는 수정 뒤 `codemap update`. 인덱싱된 프로젝트는 `.codemap/state.json`.
-2. `codemap find <query>`.
-3. 관계 명령은 하나. `flow`, `callees`, `callers`, `refs`, `impl`, `impact`.
-4. 반환된 파일과 줄을 소스에서 읽는다. 답이 나면 멈춘다.
+1. 처음에는 `codemap index`, 소스를 수정한 뒤에는 `codemap update`를 실행한다. 인덱싱된 프로젝트는 `.codemap/state.json`에 기록된다.
+2. `codemap find <query>`로 심볼을 찾는다.
+3. 필요한 관계 명령 하나만 실행한다. 사용할 수 있는 명령은 `flow`, `callees`, `callers`, `refs`, `impl`, `impact`다.
+4. 결과에 나온 파일과 줄을 소스에서 확인한다. 질문에 답할 수 있으면 더 조회하지 않는다.
 
-집중된 질문에서 `map`과 `context`로 시작하지 않는다.
+질문이 구체적이라면 처음부터 `map`이나 `context`를 실행하지 않는다.
 
 ```text
 find → 관계 명령 1개 → 소스 읽기 → 종료
@@ -22,7 +22,7 @@ find → 관계 명령 1개 → 소스 읽기 → 종료
 | 누가 호출하는지 | `callers` |
 | 변경 영향 | `impact --changed` 또는 `diff` |
 
-한 조사에서는 CLI와 MCP 중 하나만 쓴다. 반복 조사에서 MCP가 이미 붙어 있으면 그 프로세스를 재사용한다.
+한 번의 조사에서는 CLI와 MCP 중 하나만 사용한다. 반복 조사에서 MCP가 이미 연결되어 있다면 기존 프로세스를 재사용한다.
 
 | CLI | MCP |
 | --- | --- |
@@ -30,16 +30,16 @@ find → 관계 명령 1개 → 소스 읽기 → 종료
 | `flow` | `get_flow` |
 | `impact` | `get_impact` |
 
-첫 조사의 `get_flow`는 `includeEvidence=false`다. 고른 엣지만 `explain_relation`으로 증명한다.
+첫 `get_flow` 호출에서는 `includeEvidence=false`로 위상만 확인한다. 확인할 엣지를 고른 뒤에만 `explain_relation`으로 근거를 요청한다.
 
 ## grep으로 넘길 때
 
 - 레거시 WebForms: `.aspx` 인라인 스크립트, `App_Code`, code-behind. `web:<name>`만 있으면 독립 `.js`/`.ts`만 인덱싱된 것이다.
-- 네이티브 DLL, 메타데이터를 읽을 수 없는 어셈블리, 소스가 닿지 않은 외부 루트. 관리되는 외부 어셈블리는 소스가 도달한 심볼의 같은 어셈블리 그래프만 best-effort다. 완전성을 보장하지 않는다. 조회는 소스가 우선이다.
+- 네이티브 DLL, 메타데이터를 읽을 수 없는 어셈블리, 소스가 닿지 않은 외부 루트. 관리되는 외부 어셈블리는 소스가 도달한 심볼의 같은 어셈블리 그래프만 제한적으로 분석한다. 완전성을 보장하지 않으므로 소스를 우선한다.
 - 종료 코드 2 또는 빈 결과가 두 번. 비슷한 이름으로 `find`를 반복하지 않는다.
 - JS 문자열 안의 HTTP 경로(`xmlhttp.open`, `fetch("aspx/...")`). 서버 핸들러 `flow` 엣지가 아니다.
 
-제거된 사용법: `codemap .`, `--deps`, `--importers`. 답이 난 뒤 관계 명령을 더 실행하지 않는다.
+다음 사용법은 지원하지 않는다: `codemap .`, `--deps`, `--importers`. 답을 얻은 뒤에는 관계 명령을 더 실행하지 않는다.
 
 ## 신뢰도
 
@@ -49,15 +49,15 @@ find → 관계 명령 1개 → 소스 읽기 → 종료
 | `syntactic` | CSS, Razor, Blazor, XAML. `Renders` / `HandlesEvent` / `UsesViewModel` 0.90, `BindsTo` 0.85 |
 | `heuristic` | 웹 정규식 또는 AST. 0.55–0.70 |
 
-0.7 미만은 힌트다. 소스를 확인한다. 휴리스틱 웹 호출을 런타임 증거로 쓰지 않는다. 신뢰도 0.85 이상인 애플리케이션 그래프 엣지(`RoutesTo`, `Renders`, `BindsTo`, `HandlesEvent`, `Registers`, `ResolvesTo`, `UsesViewModel`)만 자동 처리에 쓴다. 그 엣지는 모호하지 않은 단일 정적 일치일 때만 생긴다.
+신뢰도 0.7 미만의 결과는 힌트로만 사용하고 소스에서 확인한다. 휴리스틱 웹 호출은 런타임 증거로 사용하지 않는다. 자동 처리에는 신뢰도 0.85 이상인 애플리케이션 그래프 엣지(`RoutesTo`, `Renders`, `BindsTo`, `HandlesEvent`, `Registers`, `ResolvesTo`, `UsesViewModel`)만 사용한다. 이 엣지는 모호하지 않은 단일 정적 일치일 때만 생성된다.
 
 모호하면 `reason`이 `ambiguous`이고 `matches`에 후보가 있다. 전체 한정 이름이나 `sym://` 안정 ID를 쓴다.
 
-## 한계
+## 분석 한계
 
 JS/TS 동적 호출, 계산된 셀렉터, 패키지 import, 리플렉션, 미들웨어, 소스 생성기, 동적 Razor, DI 팩터리, JS interop은 따라가지 않는다. Razor `@code` 선언은 `.cs` 또는 code-behind로만 해소된다. 상수가 아닌 라우트와 팩터리 DI는 `RoutesTo` / `Registers` / `ResolvesTo`를 만들지 않는다. 최소 API의 람다가 하나의 익명 함수 심볼로 해소되면 `RoutesTo`가 생긴다. 최종 기준은 소스다.
 
-## 종료 코드
+## 종료 코드와 대응
 
 | 코드 | 의미 | 처리 |
 | ---: | --- | --- |
@@ -66,7 +66,7 @@ JS/TS 동적 호출, 계산된 셀렉터, 패키지 import, 리플렉션, 미들
 | 2 | 일치 없음 또는 모호 (`no_matches`, `ambiguous`) | 식별자를 좁히거나 grep으로 넘긴다 |
 | 130 | 취소 | 취소로 처리한다 |
 
-## 10. JSON 스키마 — version 4 / version 5
+## JSON 스키마 — version 4 / version 5
 
 CLI `--json`은 evidence가 없으면 **version 4**, `--evidence`면 **version 5**다.
 
@@ -103,7 +103,7 @@ evidence 값: `semantic`, `static-import`, `same-file-fallback`, `name-fallback`
 
 `--json`만 쓰면 version 4, `--json --evidence`면 version 5다.
 
-## 11. MCP 설정
+## MCP 설정
 
 ```bash
 codemap mcp --root <repo>
@@ -114,7 +114,7 @@ codemap mcp --root <repo>
   "mcpServers": {
     "codemap": {
       "command": "dnx",
-      "args": ["Proofmark.CodeMap@0.3.0", "--yes", "mcp", "--root", "/path/to/repo"]
+      "args": ["Proofmark.CodeMap@0.4.0", "--yes", "mcp", "--root", "/path/to/repo"]
     }
   }
 }

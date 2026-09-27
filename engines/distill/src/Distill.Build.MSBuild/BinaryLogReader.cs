@@ -39,6 +39,24 @@ public sealed class BinaryLogReader
             warnings.Add(BuildEventMapper.MapWarning(e, warnings.Count));
         };
 
+        source.RecoverableReadError += e =>
+        {
+            // MSBuild 18에서 정방향 호환 재생을 켠 호출자는 읽지 못한
+            // 레코드를 명시적으로 관찰해야 한다. 경고를 보존하고 빌드가
+            // 실패한 경우에는 인증서 생성 전에 재생이 중단되지 않도록
+            // 결과를 불확실한 상태로 표시한다.
+            formatVersionMismatch = true;
+            warnings.Add(DistillDiagnostic.Create(
+                id: $"build-binlog-recoverable-{warnings.Count + 1}",
+                kind: DiagnosticKind.Format,
+                severity: DiagnosticSeverity.Warning,
+                source: "msbuild-binlog",
+                code: e.ErrorType.ToString(),
+                message: $"MSBuild binlog record '{e.RecordKind}' could not be read ({e.ErrorType}); forward-compatible replay continued.",
+                provenance: DiagnosticProvenance.MsBuildBinaryLog,
+                confidence: 0.5));
+        };
+
         source.BuildFinished += (_, e) =>
         {
             buildSucceeded = e.Succeeded;

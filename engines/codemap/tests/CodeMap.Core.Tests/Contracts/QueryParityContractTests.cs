@@ -40,6 +40,22 @@ public sealed class QueryParityContractTests
             fixture.SqlService.SymbolsInFiles([path]));
     }
 
+    [Fact(Timeout = 90_000)]
+    public async Task LocateChangedSymbols_UsesFileSymbolsWhenChangedLinesAreOutsideDeclarations()
+    {
+        await using var fixture = await QueryParityFixture.CreateAsync("MultiProject");
+        var application = new CodeMapApplication(graphReaderFactory: OpenReaderAsync);
+
+        var response = await application.LocateChangedSymbolsAsync(
+            new LocateChangedSymbolsRequest(
+                [new ChangedFileSpan("ProjA/Caller.cs", 1, 1)],
+                fixture.WorkingDirectory));
+
+        Assert.True(response.Succeeded);
+        Assert.Empty(response.Value!.LocationUnknownSpans);
+        Assert.Contains(response.Value.Symbols, symbol => symbol.QualifiedName == "Fixture.ProjA.Caller");
+    }
+
     [Fact]
     public async Task PublicQueryMatrix_PreservesOrderedResultsAndRelationMetadata()
     {

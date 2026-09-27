@@ -1,10 +1,14 @@
 # 변경 기록
 
-Proofmark 도구 패키지(`proof`, `proof-mcp`, `distill`, `distill-mcp`, `Proofmark.CodeMap`)의 눈에 띄는 변경을 적는다. 도구는 `Version.props`의 버전 하나를 공유한다.
+Proofmark 도구 패키지(`proof`, `proof-mcp`, `distill`, `distill-mcp`, `Proofmark.CodeMap`)의 주요 변경 사항을 기록한다. 모든 패키지는 `Version.props`의 버전을 함께 사용한다.
 
 ## [Unreleased]
 
-## [0.3.0] - 릴리스 태그 시점
+## [0.4.0]
+
+- 새 규칙 ID 없이 P011 필수 아키텍처 의무를 분석 완료·규칙 파일 다이제스트에 묶고, Distill v1 스키마와 런타임 check 설정의 parity 및 생성 계약 표를 CI에서 검사한다.
+
+## [0.3.0] - 릴리스 태그 기준
 
 ### 추가
 
@@ -15,14 +19,14 @@ Proofmark 도구 패키지(`proof`, `proof-mcp`, `distill`, `distill-mcp`, `Proo
 - CI `pack-windows`: ubuntu `pack`이 만든 nupkg로 Windows에서 도구 설치와 MCP 스모크를 실행한다.
 - `proof-windows` CI 잡: windows-latest에서 기본 프로파일 `proof verify`.
 - `consumer-feed` 워크플로(`workflow_dispatch`): GitHub Packages에서 도구를 설치하고 같은 소비자 골든을 실행한다.
-- `proof history`: `.proof/certificates/*.summary.json`의 인증서 분석(판정 분포, 규칙별 미해결 의무와 P005 매핑 부채, 차단 이유 코드, `--rule`, `--format json`). 분석일 뿐이다. 과거 인증서는 현재 변경의 증거가 아니다.
-- `proof exception`: 서명된 정책 예외(`list`, `verify`, `sign`, `evaluate`). 거버넌스일 뿐이다. 예외는 의무 상태나 인증서 판정을 바꾸지 않는다(`Exception != Proven`).
+- `proof history`: `.proof/certificates/*.summary.json`을 분석한다(판정 분포, 규칙별 미해결 의무와 P005 매핑 부채, 차단 이유 코드, `--rule`, `--format json`). 분석 결과일 뿐이며, 과거 인증서는 현재 변경의 증거가 아니다.
+- `proof exception`: 서명된 정책 예외(`list`, `verify`, `sign`, `evaluate`)를 관리한다. 예외는 거버넌스 수단일 뿐 의무 상태나 인증서 판정을 바꾸지 않는다(`Exception != Proven`).
 - 증명 신원 클레임(ref, workflow ref, workflow sha, commit sha, run attempt)과 `proof certificate verify` 옵션 `--repository`, `--allow-ref`, `--allow-workflow`, `--expected-commit-sha`.
 - `fixtures/proof/coverage-service` 골든과 `coverage-golden` 워크플로(`workflow_dispatch`, 주간): testMaps 없이 런타임 커버리지(`RUNTIME_COVERAGE`, `BIND_TEST_MAPPING`)만으로 P005가 `PROVEN`에 도달한다. `consumer_golden.py`는 픽스처의 `golden.json`으로 바꿀 파일과 기대 규칙, 증거 종류를 받는다.
-- `docs/adopting-proof.md`에 nuget.org 설치, MCP `dnx` 설정, 종료 코드와 `failOnUncertainCodes` 승격 순서, 영향 예산과 `indexBaseRevision` 비용 절을 적었다.
+- `docs/adopting-proof.md`에 nuget.org 설치, MCP `dnx` 설정, 종료 코드와 `failOnUncertainCodes` 승격 순서, 영향 예산과 `indexBaseRevision` 비용을 정리했다.
 - `P010AspNetGoldenTests`: CodeMap AspNetFixture를 실제로 인덱싱해 `profile: app`, `appContract: required`에서 라우트 P010이 처리기 Cobertura 적중으로만 `PROVEN`이 되는지 본다. 저장소 `proof.yml`은 P010을 계속 끈다.
 - 인증서 `toolchain`에 선택 속성 `proofBinarySha256`, `codeMapBinarySha256`, `distillBinarySha256`이 생겼다. 어셈블리 경로를 알 때만 채우고, null이면 직렬화하지 않아 schema 3과 기존 statement 다이제스트가 그대로다. `proof certificate verify --toolchain-binary <path>`(반복 가능)는 줄 때만 비교한다. 불일치는 exit 1, 파일이 없으면 exit 2다.
-- `docs/adopting-proof.md`의 서명 키 운영 절(환경 변수 전용 키, 회전, 포크 PR, `--trusted-issuer` 예시, 예외 게이트 한계).
+- `docs/adopting-proof.md`에 서명 키 운영 방법(환경 변수 전용 키, 키 회전, 포크 PR, `--trusted-issuer` 예시, 예외 게이트의 한계)을 추가했다.
 - `docs/ci/azure-pipelines-proof.yml`: GitHub 액션과 같은 종료 코드 규칙의 Azure Pipelines 예시. 결과는 로그와 아티팩트다.
 - `SECURITY.md`: 비공개 보고 경로, 키 취급, 보안 스캔과 SBOM이 증명 증거가 아니라는 범위.
 - CodeMap 호출자 조회가 `Calls`와 함께 `scip:` 프로젝트의 semantic `References`를 읽는다. 저장 엣지는 그대로이고 C# 타입 이름 `References`와 heuristic SCIP 참조는 호출자가 아니다.

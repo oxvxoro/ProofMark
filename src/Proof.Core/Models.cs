@@ -206,7 +206,8 @@ public sealed record EvidenceProvenance(
     string? ArtifactPointer = null,
     string? SourceDigest = null,
     string? CheckId = null,
-    string? Sha256 = null);
+    string? Sha256 = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? PolicyDigest = null);
 
 public sealed record ProofEvidence(
     string Id,
@@ -270,7 +271,8 @@ public sealed record ChangeImpact(
     bool StructuredDeltaFailed = false,
     IReadOnlyList<string>? DeletionPathsResolved = null,
     IReadOnlyList<ArchitectureViolationRef>? ArchitectureViolations = null,
-    bool? ArchitectureRulesPresent = null);
+    bool? ArchitectureRulesPresent = null,
+    string? ArchitectureRulesDigest = null);
 
 // CodeMap 아키텍처 위반 하나. Proof 쪽으로 옮긴 것이다. SubjectId는
 // 위반 Source다(cycle이면 프로젝트 이름, 아니면 심볼 id). Project,

@@ -36,7 +36,7 @@ jobs:
   distill-path:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [windows-latest]
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -90,6 +90,8 @@ jobs:
           require-signed: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.fork == false }}
         env:
           PROOF_ATTESTATION_HMAC_KEY: ${{ secrets.PROOF_ATTESTATION_HMAC_KEY }}
+      - name: Assert required P011 evidence
+        run: dotnet test tests/Proof.Tests --no-build --filter FullyQualifiedName~RequiredP011CertificateTests
       - name: Save .proof/cache
         if: always()
         uses: actions/cache/save@v4
@@ -137,6 +139,8 @@ jobs:
           require-signed: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.fork == false }}
         env:
           PROOF_ATTESTATION_HMAC_KEY: ${{ secrets.PROOF_ATTESTATION_HMAC_KEY }}
+      - name: Assert required P011 evidence
+        run: dotnet test tests/Proof.Tests --no-build --filter FullyQualifiedName~RequiredP011CertificateTests
       - name: Upload proof artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -214,6 +218,8 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - run: dotnet restore Proof.slnx
+      - name: Distill schema and generated contract gates
+        run: dotnet test engines/distill/tests/Distill.Tests/Distill.Tests.csproj --no-restore --filter FullyQualifiedName~DistillConfigSchemaTests
       - name: Pack proof, proof-mcp, distill, distill-mcp, Proofmark.CodeMap
         run: |
           dotnet pack src/Proof.Cli.Host/Proof.Cli.Host.csproj -c Release --no-restore -o artifacts/packages

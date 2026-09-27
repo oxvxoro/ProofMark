@@ -188,11 +188,9 @@ public static class VerifyCommand
     // blocking constraint는 실제 코드를 담는다. 의무 이유도
     // 플래너 산문(예: "no mapped test relation found")을 담으므로, 이유는
     // ProofReasonCodes가 알 때만 코드로 친다.
-    // REQUIRED_EVIDENCE_MISSING 폴백은 테스트 매핑 의무
-    // (P005)로 한정되어 merge-block이 문서화된 의미와 맞는다. 이유가
-    // 플래너 산문뿐인 필수 비매핑 의무(예: 바인딩되지 않은
-    // P004 영향 테스트)는 새로 merge-block하지 않고
-    // 기존의 조언 취급을 유지한다.
+    // REQUIRED_EVIDENCE_MISSING 폴백은 직접 증거가 반드시 필요한 P005와
+    // P011에 적용한다. 이유가 플래너 산문뿐인 필수 비매핑 의무
+    // (예: 바인딩되지 않은 P004 영향 테스트)는 새로 merge-block하지 않는다.
     private static string ResolveUnresolvedReasonCode(ChangeCertificate certificate, ProofObligation obligation)
     {
         var constraint = (certificate.Constraints ?? [])
@@ -205,9 +203,9 @@ public static class VerifyCommand
 
         return certificate.Evaluation.ReasonCode
                ?? obligation.Reasons.FirstOrDefault(ProofReasonCodes.IsKnown)
-               ?? (obligation.Kind == ObligationKind.TestMapping
-                   ? ProofReasonCodes.RequiredEvidenceMissing
-                   : obligation.Reasons.FirstOrDefault() ?? ProofReasonCodes.RequiredEvidenceMissing);
+               ?? (obligation.Kind is ObligationKind.TestMapping or ObligationKind.Architecture
+                    ? ProofReasonCodes.RequiredEvidenceMissing
+                    : obligation.Reasons.FirstOrDefault() ?? ProofReasonCodes.RequiredEvidenceMissing);
     }
 
     // 큰 변경이 터미널을 채우지 않도록 목록을 제한한다. 전체 집합은

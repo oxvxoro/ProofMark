@@ -432,8 +432,19 @@ public sealed class CodeMapApplication
 
                 if (matches.Count == 0)
                 {
-                    locationUnknown.Add(span);
-                    continue;
+                    // 변경 줄이 선언 바깥(예: using 지시문)에 있으면 파일의 심볼을
+                    // 보수적인 영향 루트로 사용한다. 파일 자체가 인덱싱되지 않은 경우만
+                    // 위치 미확정으로 남긴다.
+                    var fileSymbols = service.SymbolsInFiles([span.RelativePath], request.MaxResultsPerSpan);
+                    var fileRoots = fileSymbols
+                        .Where(IsFileImpactRoot)
+                        .ToArray();
+                    matches = fileRoots.Length > 0 ? fileRoots : fileSymbols;
+                    if (matches.Count == 0)
+                    {
+                        locationUnknown.Add(span);
+                        continue;
+                    }
                 }
 
                 foreach (var symbol in matches)
@@ -451,6 +462,18 @@ public sealed class CodeMapApplication
                 new LocateChangedSymbolsResult(ordered, locationUnknown), stale);
         });
     }
+
+    private static bool IsFileImpactRoot(IndexedSymbol symbol)
+        => symbol.Kind is NodeKind.Class
+            or NodeKind.Struct
+            or NodeKind.Record
+            or NodeKind.Interface
+            or NodeKind.Enum
+            or NodeKind.Delegate
+            or NodeKind.RazorComponent
+            or NodeKind.RazorPage
+            or NodeKind.RazorView
+            or NodeKind.XamlView;
 
     public async Task<ApplicationResponse<IndexSummary>> RefreshIndexAsync(
         RefreshIndexRequest request,

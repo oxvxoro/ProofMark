@@ -1,6 +1,6 @@
 # Proof 아키텍처
 
-CodeMap은 무엇이 바뀌고 무엇에 영향을 주는지를 본다. Distill은 빌드, 테스트, 분석 산출물을 모은다. Proof는 그 증거가 변경에 충분한지를 판정한다. 로드맵은 [roadmap.md](roadmap.md).
+Proofmark는 세 가지 역할을 분리한다. CodeMap은 변경과 영향 범위를 찾고, Distill은 빌드·테스트·분석 결과를 모으며, Proof는 수집된 증거가 변경을 검증하기에 충분한지 판단한다. 현재 범위는 [roadmap.md](roadmap.md)에 정리되어 있다.
 
 ```text
 Proof.Cli
@@ -12,46 +12,45 @@ Proof.Adapters.CodeMap   Proof.Adapters.Distill
    CodeMap.Engine              Distill.Core
 ```
 
-CodeMap과 Distill은 서로와 Proof를 참조하지 않는다. `Proof.Adapters.Git`만 `Distill.Git`을 참조한다. 엔진은 git을 직접 띄우지 않고 `IAttestationContextResolver`를 받는다.
+CodeMap과 Distill은 서로 또는 Proof를 참조하지 않는다. Git 연동은 `Proof.Adapters.Git`이 담당하며, 이 프로젝트만 `Distill.Git`을 참조한다. 엔진은 git 프로세스를 직접 실행하지 않고 `IAttestationContextResolver`를 통해 필요한 정보를 받는다.
 
 ## 불변 조건
 
-1. 핵심 판정은 결정적이다.
-2. LLM은 증명 생성과 판정에 참여하지 않는다.
-3. CodeMap은 Distill에 의존하지 않는다.
-4. Distill은 CodeMap에 의존하지 않는다.
-5. Proof는 명시적 어댑터로만 둘을 쓴다.
-6. 구조화된 증거가 텍스트 파싱보다 우선한다.
-7. 통과한 검사만으로 충분성이 증명되지 않는다.
-8. 알 수 없거나 불완전한 커버리지는 숨기지 않는다.
-9. 휴리스틱 관계는 조용히 의미 사실이 되지 않는다.
-10. 증거 출처는 변경 인증서까지 남는다.
-11. CodeMap과 Distill의 독립 워크플로는 그대로 테스트할 수 있다.
-12. 마이그레이션과 의미 리팩터링은 서로 다른 변경이다.
+1. 핵심 판정은 언제 실행해도 같은 입력에 같은 결과를 내야 한다.
+2. LLM은 증거를 만들거나 판정하는 경로에 참여하지 않는다.
+3. CodeMap과 Distill은 서로 의존하지 않는다.
+4. Proof는 명시적인 어댑터를 통해서만 두 엔진을 사용한다.
+5. 구조화된 산출물이 있으면 텍스트 파싱보다 우선한다.
+6. 검사가 통과했다는 사실만으로 변경에 필요한 증거가 충분하다고 판단하지 않는다.
+7. 알 수 없거나 불완전한 커버리지는 숨기지 않는다.
+8. 휴리스틱 관계를 의미적 사실처럼 조용히 승격하지 않는다.
+9. 증거의 출처는 변경 인증서까지 보존한다.
+10. CodeMap과 Distill은 Proof 없이도 독립적으로 테스트할 수 있다.
+11. 마이그레이션과 의미를 바꾸는 리팩터링은 서로 다른 변경으로 다룬다.
 
 ## 판정
 
 | 판정 | 의미 |
 | --- | --- |
-| `PROVEN` | 필수 의무가 모두 주체 범위의 인정 가능한 증거로 증명됨 |
-| `NOT_READY` | 필수 의무에 권위 있는 실패 증거가 있음 |
-| `UNCERTAIN` | 필수 실패는 없으나 미해결 의무나 차단 제약이 남음 |
-| `NO_CHANGE` | 잡힌 변경 집합이 비어 있음 |
+| `PROVEN` | 범위 안의 모든 필수 의무를 인정 가능한 증거로 확인함 |
+| `NOT_READY` | 필수 의무에 대해 신뢰할 수 있는 실패 증거가 있음 |
+| `UNCERTAIN` | 필수 실패는 없지만 미해결 의무나 차단 제약이 남아 있음 |
+| `NO_CHANGE` | 변경 집합이 비어 있음 |
 | `INFRA_ERROR` | 검증 인프라가 실패함 |
 
-Distill `PASS`는 검사가 쓸 수 있는 증거를 냈다는 뜻이다. Proof `PROVEN`은 그 증거가 변경에 충분하다는 뜻이다.
+Distill의 `PASS`는 검사가 사용할 수 있는 결과를 냈다는 뜻이다. Proof의 `PROVEN`은 그 결과가 해당 변경을 검증하기에 충분하다는 뜻이다. 두 판정은 같은 의미가 아니다.
 
 종료 코드: `0` 준비 또는 변경 없음, `1` `NOT_READY` 또는 머지 차단 `UNCERTAIN`, `3` 권고 `UNCERTAIN`, `2`/`4` 설정 또는 인프라.
 
 ## 증명
 
-`PROOF_ATTESTATION_HMAC_KEY`가 있으면 `HmacAttestationSigner`가 문장 다이제스트에 `hmac-sha256` 봉투를 만든다. 키가 없으면 `none`이다. 키는 봉투, 인증서, 서명 페이로드에 들어가지 않는다. HMAC 입력은 `proofmark:attestation:v2|<statementDigest>`다. v1 봉투는 이관 중에만 검증되고, 새 서명은 v2다. 증명 서명은 수동 검토나 예외 서명으로 재사용할 수 없다. 비교는 hex 디코드 뒤 `CryptographicOperations.FixedTimeEquals`다.
+`PROOF_ATTESTATION_HMAC_KEY`가 있으면 `HmacAttestationSigner`가 문장 다이제스트에 `hmac-sha256` 봉투를 만든다. 키가 없을 때는 `none`을 사용한다. 키 자체는 봉투, 인증서, 서명 페이로드에 넣지 않는다. HMAC 입력은 `proofmark:attestation:v2|<statementDigest>`다. v1 봉투는 마이그레이션 기간에만 검증하며 새 서명은 v2로 만든다. 증명서 서명은 수동 검토나 예외 서명에 재사용할 수 없다. 비교할 때는 hex를 디코드한 뒤 `CryptographicOperations.FixedTimeEquals`를 사용한다.
 
-`TrustPolicy.TrustedIssuers`가 비어 있지 않으면 서명이 맞아도 `SignerIdentity`가 목록에 있어야 `Trusted`다. `Repository`, `AllowedRefs`, `AllowedWorkflows`, `ExpectedCommitSha`가 설정된 항은 해당 클레임이 있어야 한다. 서명 유효와 신뢰는 분리된다. `branch`만 있는 레거시 인증서는 `--allow-ref`를 만족한다. 설정되지 않은 필드는 강제하지 않는다.
+`TrustPolicy.TrustedIssuers`가 비어 있지 않으면 서명이 유효해도 `SignerIdentity`가 목록에 있어야 `Trusted`가 된다. `Repository`, `AllowedRefs`, `AllowedWorkflows`, `ExpectedCommitSha`를 설정한 경우에는 해당 클레임도 인증서에 있어야 한다. 서명의 유효성과 발급자에 대한 신뢰는 별도로 판단한다. `branch`만 있는 레거시 인증서는 `--allow-ref`를 만족한다. 설정하지 않은 필드는 검사하지 않는다.
 
 클레임은 ref, workflow ref, workflow sha, commit sha, run attempt다. 사람 행위자는 클레임이 아니다. 구현은 `GitAttestationContextResolver`가 CI 환경을 먼저 보고, 이어서 `origin` URL과 `rev-parse`를 정규화한다.
 
-키 없는 제공자(OIDC, Sigstore)는 등록하지 않는다. 등록되지 않은 제공자는 신뢰하지 않는다. 도구 바이너리 다이제스트는 아직 기록하지 않는다.
+키 없는 제공자(OIDC, Sigstore)는 등록하지 않는다. 등록되지 않은 제공자는 신뢰하지 않는다. 실행 바이너리 다이제스트는 사용할 수 있을 때 인증서 toolchain에 기록하며, null 필드는 직렬화하지 않는다.
 
 ## 의무
 

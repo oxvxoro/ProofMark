@@ -5,11 +5,18 @@ using System.Diagnostics;
 
 namespace Proof.Tests;
 
+[CollectionDefinition("CodeMapInProcessIndex", DisableParallelization = true)]
+public sealed class CodeMapInProcessIndexCollection;
+
+[CollectionDefinition("AttestationEnvironment")]
+public sealed class AttestationEnvironmentCollection;
+
 /// <summary>
 /// 옵트인 base-revision 삭제 경로의 통합 테스트. 테스트가 임시 git
 /// 저장소를 만든다(절대 남기면 안 된다. worktree 정리는 분석기의 finally 블록에서,
 /// 저장소 정리는 테스트에서 실행된다).
 /// </summary>
+[Collection("CodeMapInProcessIndex")]
 public sealed class BaseRevisionIndexTests
 {
     [Fact(Timeout = 120_000)]

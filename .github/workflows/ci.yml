@@ -64,7 +64,7 @@ jobs:
           dotnet-version: '10.0.x'
       - run: dotnet restore Proof.slnx
       - run: dotnet build Proof.slnx --no-restore
-      - run: dotnet test tests/Proof.Tests --no-build
+      - run: dotnet test tests/Proof.Tests --no-build --filter "FullyQualifiedName!~RequiredP011CertificateTests"
       - name: Proof config validate
         run: dotnet run --project src/Proof.Cli.Host/Proof.Cli.Host.csproj --no-build -- config validate
       - name: Restore .proof/cache

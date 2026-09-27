@@ -12,11 +12,11 @@ public sealed class ContractDocsTests
     {
         var path = Path.Combine(SolutionRoot, "docs", "AGENT_INTEGRATION.md");
         var text = File.ReadAllText(path);
-        var section10Start = text.IndexOf("## 10.", StringComparison.Ordinal);
-        var section11Start = text.IndexOf("## 11.", StringComparison.Ordinal);
-        Assert.True(section10Start >= 0 && section11Start > section10Start);
+        var schemaSectionStart = text.IndexOf("## JSON 스키마", StringComparison.Ordinal);
+        var mcpSectionStart = text.IndexOf("## MCP 설정", StringComparison.Ordinal);
+        Assert.True(schemaSectionStart >= 0 && mcpSectionStart > schemaSectionStart);
 
-        var section10 = text[section10Start..section11Start];
+        var section10 = text[schemaSectionStart..mcpSectionStart];
         Assert.Contains("version 4 / version 5", section10, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("version 2 / version 3", section10, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("\"version\": 2", section10, StringComparison.Ordinal);
